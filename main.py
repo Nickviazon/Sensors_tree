@@ -1,13 +1,13 @@
 from typing import Any, List
-import matrices
+from matrices import adjacency_matrices
 
 
-def _indexes(lst: List[Any], element: int)->list:
+def indexes(lst: List[Any], element: int)->list:
     """Возвращает все индексы элемента в списке"""
     return [i for i, elem in enumerate(lst) if element == elem]
 
 
-def _create_tree(num_of_sensors: int)->list:
+def create_tree(num_of_sensors: int)->list:
     """Функция для инициализации сенсорного дерева"""
     sensor_list = [Sensor(i) for i in range(0, num_of_sensors)]
     return sensor_list
@@ -24,9 +24,9 @@ class Sensor:
 class SensorTree:
     """Сенсорное дерево"""
     def __init__(self, c_matrix: List[List[int]]):
-        self.c_matrix = c_matrix  # Матрица смежности
-        self.num_of_sensors = len(self.c_matrix)  # количество сенсоров в дереве
-        self.sensor_list = _create_tree(self.num_of_sensors)  # список всех сенсоров
+        self.adjacency_matrix = c_matrix  # Матрица смежности
+        self.num_of_sensors = len(self.adjacency_matrix)  # количество сенсоров в дереве
+        self.sensor_list = create_tree(self.num_of_sensors)  # список всех сенсоров
         self.bs_is_not_full = True  # истинно когда все сенсоры передали сообщения
 
     def sensors_update(self)->None:
@@ -37,23 +37,32 @@ class SensorTree:
 
 if __name__ == '__main__':
     schedules = []
-    for matrix in matrices.test_matrices:
+    for matrix in adjacency_matrices:
         sensor_tree = SensorTree(matrix)
         del matrix
+        adjacency_matrix = sensor_tree.adjacency_matrix
         sensors = sensor_tree.sensor_list
         schedule = []
         slot_num = 0
+
         while sensor_tree.bs_is_not_full:
             schedule.append([])  # создаем слот
+
             for sensor in sensors:
                 sensor_num = sensor.sensor_num
                 if sensor_num > 0:  # если сенсор не БС
-                    to_sensor = sensor_tree.c_matrix[sensor_num].index(1)  # определяем сенсор получатель
+
+                    # определяем сенсор получатель
+                    to_sensor = (adjacency_matrix[sensor_num].index(1)
+                                 if adjacency_matrix[sensor_num].index(1) != sensor_num
+                                 else adjacency_matrix[sensor_num].index(1, sensor_num+1))
+
                     if (not sensors[to_sensor].blocked  # если сенсор получатель не блокирован
                        and not sensor.blocked           # и сенсор отправитель не блокирован
                        and sensor.need_send_msg):       # и сенсору необходимо послать сообщение:
+
                         # определяем каким сенсорам необходимо блокировать передачу сообщений во избежания коллизий
-                        indexes_for_block = _indexes(sensor_tree.c_matrix[sensor_num], 1)
+                        indexes_for_block = indexes(sensor_tree.adjacency_matrix[sensor_num], 1)
                         # добавляем в расписания сенсоры отправителя и получателя
                         schedule[slot_num].append((sensor_num, to_sensor))
                         # добавляем в очередь сообщений сенсора получателя(если не БС)
@@ -64,9 +73,11 @@ if __name__ == '__main__':
                             sensors[i].blocked = True
                         # для сенсора отправителя убираем необходимость передачи сообщения
                         del sensor.need_send_msg[0]
+
                 # для БС отсутствует необходимость в передаче сообщения
                 elif sensor.sensor_num == 0:
                     sensor.need_send_msg = []
+
             else:
                 # закрываем слот и убираем блокировки сенсоров
                 slot_num += 1
