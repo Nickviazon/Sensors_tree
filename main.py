@@ -1,14 +1,16 @@
 from typing import Any, List
 from matrices import adjacency_matrices
+from tree_gen import tree_generator
+import validate
 
 
 def indexes(lst: List[Any], element: int)->list:
     """Возвращает все индексы элемента в списке"""
     return [i for i, elem in enumerate(lst) if element == elem]
 
-
 if __name__ == '__main__':
     schedules = []
+    # graph = tree
     for adjacency_matrix in adjacency_matrices:
         need_send_msg = [[i] if i != 0 else 0 for i in range(len(adjacency_matrix))]
         schedule = []
@@ -43,4 +45,5 @@ if __name__ == '__main__':
                     del need_send_msg[from_sensor][0]
             slot_num += 1
         schedules += [(schedule, len(schedule))]
-    print(*schedules, sep='\n')
+        print(validate.validateFunc(adjacency_matrix, schedule))
+    # print(*schedules, sep='\n')
