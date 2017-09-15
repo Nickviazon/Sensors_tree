@@ -1,9 +1,8 @@
-from typing import Any, List
 from matrices import adjacency_matrix
 import validate
 
 
-def indexes(lst: List[Any], element: int)->list:
+def indexes(lst, element):
     """Возвращает все индексы элемента в списке"""
     return [i for i, elem in enumerate(lst) if element == elem]
 
@@ -11,6 +10,10 @@ def indexes(lst: List[Any], element: int)->list:
 def sensors_tree(adj_matrix):
 
     def dfs(node_index):
+        """
+        Обход дерева в глубину.
+        При обходе сенсор сразу пытается отдать сообщение
+        """
         from_sensor = node_index
         visited_sensors.append(from_sensor)
         to_sensor = (adjacency_matrix[from_sensor].index(1)
@@ -52,9 +55,8 @@ def sensors_tree(adj_matrix):
         slot_num += 1
     return schedule
 
-
-
 if __name__ == '__main__':
     schedule = sensors_tree(adjacency_matrix)
-    print(validate.validate_func(adjacency_matrix, schedule))
+    print('Длина расписания равна {}'.format(len(schedule)))
+    print('Is valid? {}'.format(validate.validate_func(adjacency_matrix, schedule)))
 
