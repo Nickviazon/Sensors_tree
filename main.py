@@ -1,7 +1,3 @@
-from matrices import adjacency_matrix
-import validate
-
-
 def indexes(lst, element):
     """Возвращает все индексы элемента в списке"""
     return [i for i, elem in enumerate(lst) if element == elem]
@@ -55,7 +51,18 @@ def sensors_tree(adj_matrix):
         slot_num += 1
     return schedule
 
+
 if __name__ == '__main__':
+    from tree_gen import tree_generator
+    import validate
+
+    while True:
+        try:
+            N = int(input('Введите число сенсоров в сети: '))
+            break
+        except ValueError:
+            print('Вы ввели некоректное число, попробуйте снова!')
+    adjacency_matrix = tree_generator(N)
     schedule = sensors_tree(adjacency_matrix)
     print('Длина расписания равна {}'.format(len(schedule)))
     print('Is valid? {}'.format(validate.validate_func(adjacency_matrix, schedule)))

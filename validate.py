@@ -55,9 +55,3 @@ def step_validation(graph, step, weight_nodes, log):
             print(weight_nodes)
     return weight_nodes
 
-
-if __name__ == "__main__":
-    import matrices as m
-    list_nodes = m.adjacency_matrix[0]
-    route = [[[0, 1], [0, 1], [0, 1]]]
-    validate_func(list_nodes, route)
