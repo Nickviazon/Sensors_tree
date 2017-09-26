@@ -65,5 +65,5 @@ if __name__ == '__main__':
     adjacency_matrix = tree_generator(N)
     schedule = sensors_tree(adjacency_matrix)
     print('Длина расписания равна {}'.format(len(schedule)))
-    print('Is valid? {}'.format(validate.validate_func(adjacency_matrix, schedule)))
+    print('Is valid? {}'.format(validate.validateFunc(adjacency_matrix, schedule)))
 
