@@ -1,27 +1,28 @@
 from math import inf
 
-def dijkstra(adj_matrix, start=None, end=None):
+
+def dijkstra(adj_matrix):
     """
     Расчитывает расстояния от БС до всех серсоров
     :param adj_matrix - матрица смежности
-    :param start - начальный сенсор
-    :param end - конечный сенсор
-    :todo: использовать параметр start
     """
-    path = [inf if i != 0 else 0 for i, elem in enumerate(adj_matrix)]
+    node_weight = [inf if i != 0 else 0 for i, elem in enumerate(adj_matrix)]
+    paths = [[] for _ in adj_matrix]
     marker = [False for _ in range(len(adj_matrix))]
 
     for i, node in enumerate(adj_matrix):
         for j, edge_weight in enumerate(node):
             if edge_weight >= 0:
                 if (i != j and edge_weight > 0
-                     and path[j] > path[i] + edge_weight  # старый путь длинее нового
-                     and marker[i] is False):
-                    path[j] = path[i] + edge_weight
+                    and node_weight[j] > node_weight[i] + edge_weight  # старый путь длинее нового
+                    and marker[i] is False):
+                    node_weight[j] = node_weight[i] + edge_weight
+                    paths[j] = paths[i] + [i]
             else:
                 raise ValueError('Отрицательные веса ребер в графе')
         marker[i] = True
-    return path
+    return paths
+
 
 if __name__ == '__main__':
     __doc__ = """
