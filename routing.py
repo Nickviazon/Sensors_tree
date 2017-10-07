@@ -1,25 +1,27 @@
 from math import inf
+import help_functions
 
 
 def dijkstra(adj_matrix):
     """
-    Расчитывает расстояния от БС до всех серсоров
-    :param adj_matrix - матрица смежности
+    Calculates minimum paths from base station to all sensors
+    :param adj_matrix - adjacency matrix
     """
     node_weight = [inf if i != 0 else 0 for i, elem in enumerate(adj_matrix)]
     paths = [[] for _ in adj_matrix]
     marker = [False for _ in range(len(adj_matrix))]
 
+    for node in adj_matrix:
+        if list(filter(lambda x: x < 0, node)):
+            raise ValueError('Negative edges weight in the graph')
+
     for i, node in enumerate(adj_matrix):
-        for j, edge_weight in enumerate(node):
-            if edge_weight >= 0:
-                if (i != j and edge_weight > 0
-                    and node_weight[j] > node_weight[i] + edge_weight  # старый путь длинее нового
-                    and marker[i] is False):
-                    node_weight[j] = node_weight[i] + edge_weight
-                    paths[j] = paths[i] + [i]
-            else:
-                raise ValueError('Отрицательные веса ребер в графе')
+        for j in help_functions.indexes(node, 0, 'grt'):
+            if (i != j
+                and node_weight[j] > node_weight[i] + node[j]  # the old path are longer then new
+                and marker[i] is False):
+                node_weight[j] = node_weight[i] + node[j]
+                paths[j] = paths[i] + [i]
         marker[i] = True
     return paths
 
