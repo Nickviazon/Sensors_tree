@@ -1,6 +1,4 @@
-def indexes(lst, element):
-    """Возвращает все индексы элемента в списке"""
-    return [i for i, elem in enumerate(lst) if element == elem]
+from help_functions import indexes
 
 
 def sensors_tree(adj_matrix):
