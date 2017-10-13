@@ -26,7 +26,8 @@ def graph_generator(n):
     prob_for_sensors = [1/(n+1) for _ in range(n + 1)]
     for i in sensors_tree:
         # выбираем сенсор для соединения и вносим информацию о связи в матрицу смежности
-        index_for_concat = choice(sensors_tree, randint(1, n//3), p=prob_for_sensors)
+        index_for_concat = choice(sensors_tree, randint(1, n//3),
+                                  p=prob_for_sensors, replace=False)
         for j in index_for_concat:
             adjacency_matrix[j][i] = 1
             adjacency_matrix[i][j] = 1
