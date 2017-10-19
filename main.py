@@ -1,6 +1,4 @@
-def indexes(lst, element):
-    """Возвращает все индексы элемента в списке"""
-    return [i for i, elem in enumerate(lst) if element == elem]
+from help_functions import indexes
 
 
 def sensors_tree(adj_matrix):
@@ -53,7 +51,7 @@ def sensors_tree(adj_matrix):
 
 
 if __name__ == '__main__':
-    from tree_gen import tree_generator
+    from graph_gen import graph_generator
     import validate
 
     while True:
@@ -62,7 +60,7 @@ if __name__ == '__main__':
             break
         except ValueError:
             print('Вы ввели некоректное число, попробуйте снова!')
-    adjacency_matrix = tree_generator(N)
+    adjacency_matrix = graph_generator(N)
     schedule = sensors_tree(adjacency_matrix)
     print('Длина расписания равна {}'.format(len(schedule)))
     print('Is valid? {}'.format(validate.validate_func(adjacency_matrix, schedule)))
