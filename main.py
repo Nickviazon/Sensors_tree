@@ -59,15 +59,15 @@ def rasp_create(adj_matrix, balance=False):
     :param balance: Бинарная опция включения/отключения балансировки
     :return: результат в формате расписания: [фрейм]
     """
+    result_way = []                             # Список передач за фрейм
     trans_num = len(adj_matrix)                 # Число передатчиков
-    trans_buf = [1 for _ in range(trans_num)]   # Число сообщений в буфере
-    trans_buf[0] = 0                            # Количество сообщений на БС
+    bs_buf = 0                                  # Количество сообщений на БС
     graph = nx.from_numpy_matrix(np.matrix(adj_matrix))
     if balance:
         routes_p_node = np.zeros((trans_num,), dtype=np.int)
         trans_routes = [[] for _ in range(trans_num)]
         for i in range(trans_num):
-            trans_routes[i] = nx.shortest_path(graph, i, 0)[::-1]
+            trans_routes[i] = nx.shortest_path(graph, 0, i)
             routes_p_node[trans_routes[i]] += 1
             routes_p_node[0] = 0
             for j in trans_routes[i]:
@@ -76,80 +76,29 @@ def rasp_create(adj_matrix, balance=False):
                     graph[e_num][j]['weight'] += routes_p_node[j] * trans_num ** -2
     else:
         trans_routes = nx.shortest_path(graph, 0)
-    trans_next = [trans_routes[i][:-1] for i in range(trans_num)]       # Список следующих приёмников в маршруте
-    trans_next_pos = [len(trans_next[i])-1 for i in range(trans_num)]   # Номер следующего приёмника в маршруте
 
-    result_way = []  # Список передач за фрейм
-
-    while trans_buf[0] != trans_num - 1:    # Пока все заявки не попадут на БС,...
-        cur_transmission = []               # Список передач за слот
+    while bs_buf < trans_num - 1:                       # Пока все заявки не попадут на БС,...
+        cur_transmission = []                           # Список передач за слот
         trans_lock = [False for _ in range(trans_num)]  # Список заблокированных для передачи и приёма передатчиков
 
         # В цикле исключена возможность передачи сообщения из БС (т.к. начинаем с 1)
         # Проходимся по сенсорам, проверяем возможность передачи и передаём
-        for i in range(1, len(trans_buf)):
-            # Формат [номер маршрута][номер следующего пункта назначения]
-            transfer_elem = trans_next[i][trans_next_pos[i]] # Номер передатчика, который принимает сообщение
+        for i in range(1, trans_num):
             # Проверка возможности передачи сообщения
-            trans_allowed = True
-            for j in range(trans_num):
-                if adj_matrix[i][j] == 1 and trans_lock[j]:
-                    trans_allowed = False
-            # Если нет блокировок и есть что передавать...
-            if trans_allowed and trans_buf[i] > 0:
-                if trans_next_pos[i] >= 1:  # Теоретически от условия можно избавится, но это слишком страшно.
-                    trans_next_pos[i] -= 1
-                cur_transmission.append([i, transfer_elem])  # Добавление новой передачи в слот
-                # Передача заявки принимающему передатчику
-                trans_buf[i] -= 1
-                trans_buf[transfer_elem] += 1
-                # Блокировка ближайших передатчиков
-                for j in range(trans_num):
-                    if adj_matrix[i][j] == 1:
-                        trans_lock[j] = True
-                trans_lock[i] = True
-        result_way.append(cur_transmission)  # Добавления слота во фрейм
-    return result_way  # , len(result_way)                          # Вывод результата в формате [фрейм], число_слотов
-
-
-def rasp_create_old(adj_matrix):
-    """
-    Функция для составления расписания передачи сообщений от передатчиков к Базовой Станции (БС) в случайно
-    связанной сети. Старый вариант без массивов для маршрутов. Возможно работает быстрее нового.
-    :param adj_matrix: Матрица смежности. лист листов с описанием связей графового представления системы.
-    :return: результат в формате расписания: [фрейм]
-    """
-    trans_num = len(adj_matrix)                 # Число передатчиков
-    trans_buf = [1 for _ in range(trans_num)]   # Число сообщений в буфере
-    trans_buf[0] = 0                            # Количество сообщений на БС
-    graph = nx.from_numpy_matrix(np.matrix(adj_matrix))
-    # Список следующих приёмников в маршруте
-    trans_next = [nx.shortest_path(graph, i, 0)[1] if i != 0 else 0 for i in range(trans_num)]
-
-    result_way = []  # Список передач за фрейм
-
-    while trans_buf[0] != trans_num - 1:    # Пока все заявки не попадут на БС,...
-        cur_transmission = []               # Список передач за слот
-        trans_lock = [False for _ in range(trans_num)]  # Список заблокированных для передачи и приёма передатчиков
-
-        for i in range(1, len(trans_buf)):
-            transfer_elem = trans_next[i]  # Номер передатчика, который принимает сообщение
-            # Проверка возможности передачи сообщения
-            trans_allowed = True
-            for j in range(trans_num):
-                if adj_matrix[i][j] == 1 and trans_lock[j]:
-                    trans_allowed = False
-            # Если нет блокировок и есть что передавать...
-            if trans_allowed and trans_buf[i] > 0:
-                cur_transmission.append([i, transfer_elem])  # Добавление новой передачи в слот
-                # Передача заявки принимающему передатчику
-                trans_buf[i] -= 1
-                trans_buf[transfer_elem] += 1
-                # Блокировка ближайших передатчиков
-                for j in range(trans_num):
-                    if adj_matrix[i][j] == 1:
-                        trans_lock[j] = True
-                trans_lock[i] = True
+            if len(trans_routes[i]) > 1:
+                source = trans_routes[i][-1]        # откуда передавать
+                receive = trans_routes[i][-2]       # куда передавать
+                if not trans_lock[source] and not trans_lock[receive]:
+                    # Добавление новой передачи в слот
+                    cur_transmission.append([source, receive])
+                    # Блокировка ближайших передатчиков
+                    for j in range(trans_num):
+                        if adj_matrix[source][j] == 1:
+                            trans_lock[j] = True
+                    trans_lock[source] = True
+                    trans_routes[i].pop()
+                    if len(trans_routes[i]) == 1:
+                        bs_buf += 1
         result_way.append(cur_transmission)  # Добавления слота во фрейм
     return result_way  # , len(result_way)                          # Вывод результата в формате [фрейм], число_слотов
 
@@ -162,7 +111,6 @@ def show_graph(graph):
     """
     import matplotlib.pyplot as plt
 
-
     if type(graph) == list:
         graph = nx.from_numpy_matrix(np.matrix(graph))
     nx.draw_networkx(graph, with_labels=True)
@@ -173,13 +121,13 @@ if __name__ == '__main__':
     from graph_gen import graph_generator
     import validate     # Будет добавлено после тестирования корректности работы валидатора.
 
-    while True:
-        try:
-            N = int(input('Введите число сенсоров в сети: '))
-            break
-        except ValueError:
-            print('Вы ввели некоректное число, попробуйте снова!')
-    adjacency_matrix = graph_generator(N)
+    # while True:
+    #     try:
+    #         N = int(input('Введите число сенсоров в сети: '))
+    #         break
+    #     except ValueError:
+    #         print('Вы ввели некоректное число, попробуйте снова!')
+    # adjacency_matrix = graph_generator(N)
     # adjacency_matrix = [
     #     [0, 1, 1, 1, 1, 0, 0, 0, 0],
     #     [1, 0, 0, 0, 0, 1, 0, 1, 0],
@@ -191,10 +139,26 @@ if __name__ == '__main__':
     #     [0, 1, 0, 0, 1, 0, 0, 0, 0],
     #     [0, 0, 0, 1, 1, 0, 0, 0, 0]
     # ]
-    schedule = rasp_create_old(adjacency_matrix)
+    adjacency_matrix = [[1, 1, 0, 0, 0, 0, 0, 0, 0],
+                        [1, 1, 0, 1, 1, 1, 0, 0, 1],
+                        [0, 0, 1, 1, 0, 1, 0, 1, 1],
+                        [0, 1, 1, 1, 1, 1, 0, 0, 1],
+                        [0, 1, 0, 1, 1, 1, 1, 0, 1],
+                        [0, 1, 1, 1, 1, 1, 0, 0, 1],
+                        [0, 0, 0, 0, 1, 0, 1, 1, 1],
+                        [0, 0, 1, 0, 0, 0, 1, 1, 0],
+                        [0, 1, 1, 1, 1, 1, 1, 0, 1]]
+
+    import time
+
+    start_time = time.time()
+    schedule = rasp_create(adjacency_matrix)
+    print("--- %s seconds ---" % (time.time() - start_time))
     print(schedule)
     print('Длина расписания равна {}'.format(len(schedule)))
+    start_time = time.time()
     schedule1 = rasp_create(adjacency_matrix, balance=True)
+    print("--- %s seconds ---" % (time.time() - start_time))
     print(schedule1)
     print('Длина расписания равна {}'.format(len(schedule1)))
-    # show_graph(test_graph)
+    show_graph(adjacency_matrix)
