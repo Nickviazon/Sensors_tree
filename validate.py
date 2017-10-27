@@ -1,3 +1,6 @@
+from copy import deepcopy
+
+
 class ValidateError(Exception):
     pass
 
@@ -22,6 +25,7 @@ def validate_func(graph, rasp, log=False):
     for i in range(len_rasp):
         if log:
             print("-------------\nВалидация ", i, " шага расписания")
+        step_validation_reverse(graph, rasp[i], weight_nodes, log)
         weight_nodes = step_validation(graph, rasp[i], weight_nodes, log)
     if max(weight_nodes[1:]) > 0:
         raise ValidateError("Не все сообщения переданы на БС " + str(weight_nodes))
@@ -45,6 +49,8 @@ def step_validation(graph, step, weight_nodes, log):
             raise ValidateError("Такого маршрута не существует")
         weight_nodes[step[i][0]] -= 1
         weight_nodes[step[i][1]] += 1
+        conflict.append(step[i][0])
+        conflict.append(step[i][1])
         if (weight_nodes[step[i][0]] < 0
            or weight_nodes[step[i][1]] < 0):  # Валидация что бы пустой сенсор не передавал сообщения
             raise ValidateError("Передаёт сообщение пустой сенсор")
@@ -55,3 +61,34 @@ def step_validation(graph, step, weight_nodes, log):
             print(weight_nodes)
     return weight_nodes
 
+
+def step_validation_reverse(graph, steps, weight_node, log):
+    conflict = []
+    step = deepcopy(steps)
+    step.reverse()
+    weight_nodes = deepcopy(weight_node)
+    if log is True:
+        print("reverse")
+    len_step = len(step)
+    for i in range(len_step):
+        if log:
+            print("Передатчик ", step[i][0])
+            print("Приёмник ", step[i][1])
+        if step[i][0] == step[i][1]:  # Проверка на то что приёмник и передатчик не совпадают
+            raise ValidateError("Приёмник и передатчик совпадает " + str(step[i][0]))
+        if step[i][0] in conflict or step[i][1] in conflict:  # Проверка на конфликты
+            raise ValidateError("Возникла коллизия, заблокированные сенсоры " + str(conflict))
+        if graph[step[i][0]][step[i][1]] == 0:
+            raise ValidateError("Такого маршрута не существует")
+        weight_nodes[step[i][0]] -= 1
+        weight_nodes[step[i][1]] += 1
+        conflict.append(step[i][0])
+        conflict.append(step[i][1])
+        # Валидация что бы пустой сенсор не передавал сообщения
+        if weight_nodes[step[i][0]] < 0 or weight_nodes[step[i][1]] < 0:
+            raise ValidateError("Передаёт сообщение пустой сенсор")
+        for j in range(len(graph)):  # Матрица конфликтов
+            if graph[step[i][0]][j] == 1:
+                conflict.append(j)
+        if log:
+            print(weight_nodes)
