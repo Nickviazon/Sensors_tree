@@ -41,7 +41,7 @@ def step_validation(graph, step, weight_nodes, log):
             raise ValidateError("Приёмник и передатчик совпадает " + str(step[i][0]))
         if step[i][0] in conflict or step[i][1] in conflict:  # Проверка на конфликты
             raise ValidateError("Возникла коллизия, заблокированные сенсоры " + str(conflict))
-        if graph[step[i][0]][step[i][1]] == 0:
+        if graph[step[i][1]][step[i][0]] == 0:
             raise ValidateError("Такого маршрута не существует")
         weight_nodes[step[i][0]] -= 1
         weight_nodes[step[i][1]] += 1
