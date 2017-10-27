@@ -88,6 +88,8 @@ def rasp_create(adj_matrix, balance=False):
             if len(trans_routes[i]) > 1:
                 source = trans_routes[i][-1]        # откуда передавать
                 receive = trans_routes[i][-2]       # куда передавать
+
+                # Проверка возможности передачи сообщения
                 trans_allowed = True
                 for j in range(trans_num):
                     if adj_matrix[source][j] == 1 and trans_lock[j]:
