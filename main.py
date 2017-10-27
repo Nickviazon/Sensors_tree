@@ -1,7 +1,6 @@
 # from help_functions import indexes
 import numpy as np
 import networkx as nx
-import matplotlib.pyplot as plt
 
 # Функция Виталия была временно закомментирована
 # def sensors_tree(adj_matrix):
@@ -53,6 +52,13 @@ import matplotlib.pyplot as plt
 
 
 def rasp_create(adj_matrix, balance=False):
+    """
+    Функция для составления расписания передачи сообщений от передатчиков к Базовой Станции (БС) в случайно
+    связанной сети.
+    :param adj_matrix: Матрица смежности. лист листов с описанием связей графового представления системы.
+    :param balance: Бинарная опция включения/отключения балансировки
+    :return: результат в формате расписания: [фрейм]
+    """
     trans_num = len(adj_matrix)                 # Число передатчиков
     trans_buf = [1 for _ in range(trans_num)]   # Число сообщений в буфере
     trans_buf[0] = 0                            # Количество сообщений на БС
@@ -107,6 +113,12 @@ def rasp_create(adj_matrix, balance=False):
 
 
 def rasp_create_old(adj_matrix):
+    """
+    Функция для составления расписания передачи сообщений от передатчиков к Базовой Станции (БС) в случайно
+    связанной сети. Старый вариант без массивов для маршрутов. Возможно работает быстрее нового.
+    :param adj_matrix: Матрица смежности. лист листов с описанием связей графового представления системы.
+    :return: результат в формате расписания: [фрейм]
+    """
     trans_num = len(adj_matrix)                 # Число передатчиков
     trans_buf = [1 for _ in range(trans_num)]   # Число сообщений в буфере
     trans_buf[0] = 0                            # Количество сообщений на БС
@@ -148,6 +160,9 @@ def show_graph(graph):
     :param graph: матрица смежности (лист листов) или объект графа из библиотеки networkX
     :return:
     """
+    import matplotlib.pyplot as plt
+
+
     if type(graph) == list:
         graph = nx.from_numpy_matrix(np.matrix(graph))
     nx.draw_networkx(graph, with_labels=True)
@@ -156,7 +171,7 @@ def show_graph(graph):
 
 if __name__ == '__main__':
     from graph_gen import graph_generator
-    import validate
+    import validate     # Будет добавлено после тестирования корректности работы валидатора.
 
     while True:
         try:
