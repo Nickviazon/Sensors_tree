@@ -51,7 +51,7 @@ def rasp_create(adj_matrix, balance=False):
                     cur_transmission.append([source, receive])
                     # Блокировка на передачу ближайших передатчиков
                     for j, neighbor in enumerate(adj_matrix[source]):
-                        if neighbor == 1:
+                        if neighbor == 1 or j == i:
                             receive_lock[j] = True
                     trans_lock[receive] = True
                     trans_lock[source] = True
@@ -77,16 +77,17 @@ def show_graph(graph):
 
 
 if __name__ == '__main__':
-    from graph_gen import graph_generator
+    from graph_gen import graph_generator, tree_generator
     import validate  # Будет добавлено после тестирования корректности работы валидатора.
 
-    # while True:
-    #     try:
-    #         N = int(input('Введите число сенсоров в сети: '))
-    #         break
-    #     except ValueError:
-    #         print('Вы ввели некоректное число, попробуйте снова!')
+    while True:
+        try:
+            N = int(input('Введите число сенсоров в сети: '))
+            break
+        except ValueError:
+            print('Вы ввели некоректное число, попробуйте снова!')
     # adjacency_matrix = graph_generator(N)
+    adjacency_matrix = tree_generator(N)
     # adjacency_matrix = [
     #     [0, 1, 1, 1, 1, 0, 0, 0, 0],
     #     [1, 0, 0, 0, 0, 1, 0, 1, 0],
@@ -98,15 +99,15 @@ if __name__ == '__main__':
     #     [0, 1, 0, 0, 1, 0, 0, 0, 0],
     #     [0, 0, 0, 1, 1, 0, 0, 0, 0]
     # ]
-    adjacency_matrix = [[1, 1, 0, 0, 0, 0, 0, 0, 0],
-                        [1, 1, 0, 1, 1, 1, 0, 0, 1],
-                        [0, 0, 1, 1, 0, 1, 0, 1, 1],
-                        [0, 1, 1, 1, 1, 1, 0, 0, 1],
-                        [0, 1, 0, 1, 1, 1, 1, 0, 1],
-                        [0, 1, 1, 1, 1, 1, 0, 0, 1],
-                        [0, 0, 0, 0, 1, 0, 1, 1, 1],
-                        [0, 0, 1, 0, 0, 0, 1, 1, 0],
-                        [0, 1, 1, 1, 1, 1, 1, 0, 1]]
+    # adjacency_matrix = [[1, 1, 0, 0, 0, 0, 0, 0, 0],
+    #                     [1, 1, 0, 1, 1, 1, 0, 0, 1],
+    #                     [0, 0, 1, 1, 0, 1, 0, 1, 1],
+    #                     [0, 1, 1, 1, 1, 1, 0, 0, 1],
+    #                     [0, 1, 0, 1, 1, 1, 1, 0, 1],
+    #                     [0, 1, 1, 1, 1, 1, 0, 0, 1],
+    #                     [0, 0, 0, 0, 1, 0, 1, 1, 1],
+    #                     [0, 0, 1, 0, 0, 0, 1, 1, 0],
+    #                     [0, 1, 1, 1, 1, 1, 1, 0, 1]]
 
     import time
 
