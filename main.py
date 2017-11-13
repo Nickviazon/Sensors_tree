@@ -1,4 +1,3 @@
-# from help_functions import indexes
 import numpy as np
 import networkx as nx
 
@@ -17,7 +16,7 @@ def rasp_create(adj_matrix, balance=False):
     graph = nx.from_numpy_matrix(np.matrix(adj_matrix))
     if balance:
         routes_p_node = np.zeros((trans_num,), dtype=np.int)
-        trans_routes = [[]] * trans_num
+        trans_routes = [[] for _ in range(trans_num)]
         for i in range(trans_num):
             trans_routes[i] = nx.shortest_path(graph, 0, i)
             routes_p_node[trans_routes[i]] += 1
