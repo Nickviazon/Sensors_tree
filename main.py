@@ -50,7 +50,7 @@ def rasp_create(adj_matrix, balance=False):
                     cur_transmission.append([source, receive])
                     # Блокировка на передачу ближайших передатчиков
                     for j, neighbor in enumerate(adj_matrix[source]):
-                        if neighbor == 1 or j == i:
+                        if neighbor == 1 or j == source:
                             receive_lock[j] = True
                     trans_lock[receive] = True
                     trans_lock[source] = True
