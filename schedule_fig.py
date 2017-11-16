@@ -4,18 +4,19 @@ import plotly
 import plotly.graph_objs as go
 
 # Фундовой - Сергеев
-Fundovoy = [0] * 10
-FundovoyValid = [True] * 10
+n = 10
+Fundovoy = [0] * n
+FundovoyValid = [True] * n
 
-x = list(range(10, 110, 10))
+x = list(range(n, (n+1)*10, n))
 
 percent = 0
-for KolSens in range(1, 11):
+for j, KolSens in enumerate(range(n, (n+1)*10, n)):
     for i in range(10):
-        root = graph_gen.graph_generator(KolSens * 10)
+        root = graph_gen.graph_generator(KolSens)
         resault = main.rasp_create(root, balance=True)
-        Fundovoy[KolSens - 1] += len(resault)
-        percent += 0.01
+        Fundovoy[j] += len(resault)
+        percent += 1/(10*len(x))
         print('{:.2%}, Fundovoy'.format(percent))
 
 for i in range(len(Fundovoy)):
