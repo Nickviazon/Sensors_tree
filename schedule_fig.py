@@ -10,7 +10,7 @@ import validate
 
 # Фундовой - Сергеев
 n = 10
-faces = 4
+faces = 5
 Fundovoy = [0] * n
 FundovoyValid = [True] * n
 
