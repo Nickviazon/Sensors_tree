@@ -113,11 +113,13 @@ if __name__ == '__main__':
 
     start_time = time.time()
     schedule = rasp_create(adjacency_matrix)
+    print('Is valid? {}'.format(validate.validateFunc(adjacency_matrix, schedule)))
     print("--- %s seconds ---" % (time.time() - start_time))
     print(schedule)
     print('Длина расписания равна {}'.format(len(schedule)))
     start_time = time.time()
     schedule1 = rasp_create(adjacency_matrix, balance=True)
+    print('Is valid? {}'.format(validate.validateFunc(adjacency_matrix, schedule1)))
     print("--- %s seconds ---" % (time.time() - start_time))
     print(schedule1)
     print('Длина расписания равна {}'.format(len(schedule1)))
