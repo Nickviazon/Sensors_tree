@@ -52,6 +52,9 @@ def rasp_create(adj_matrix, balance=False):
                     for j, neighbor in enumerate(adj_matrix[source]):
                         if neighbor == 1 or j == source:
                             receive_lock[j] = True
+                    for j, neighbor in enumerate(adj_matrix[receive]):
+                        if neighbor == 1 or j == receive:
+                            trans_lock[j] = True
                     trans_lock[receive] = True
                     trans_lock[source] = True
                     trans_routes[i].pop()
