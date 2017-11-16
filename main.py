@@ -76,37 +76,35 @@ def show_graph(graph):
 
 
 if __name__ == '__main__':
-    from graph_gen import graph_generator, tree_generator
+    from graph_gen import graph_generator, tree_generator, grid_generator
     import validate  # Будет добавлено после тестирования корректности работы валидатора.
 
     while True:
         try:
-            N = int(input('Введите число сенсоров в сети: '))
-            break
+            method = int(input('''Выберите метод генерации
+            1 - дерево;
+            2 - решетка;
+            3 - случайный граф
+            
+            '''))
+            if method in [1, 2, 3]:
+                if method == 1 :
+                    N = int(input('Введите число сенсоров в сети: '))
+                    adjacency_matrix = tree_generator(N)
+                elif method == 3:
+                    N = int(input('Введите число сенсоров в сети: '))
+                    adjacency_matrix = graph_generator(N)
+                elif method == 2:
+                    N = int(input('Введите длину стороны решетки: '))
+                    if N % 2 == 0:
+                        raise ValueError
+                    else:
+                        adjacency_matrix = grid_generator(N)
+                break
+            else:
+                raise ValueError
         except ValueError:
             print('Вы ввели некоректное число, попробуйте снова!')
-    # adjacency_matrix = graph_generator(N)
-    adjacency_matrix = tree_generator(N)
-    # adjacency_matrix = [
-    #     [0, 1, 1, 1, 1, 0, 0, 0, 0],
-    #     [1, 0, 0, 0, 0, 1, 0, 1, 0],
-    #     [1, 0, 0, 0, 0, 1, 1, 0, 0],
-    #     [1, 0, 0, 0, 0, 0, 1, 0, 1],
-    #     [1, 0, 0, 0, 0, 0, 0, 1, 1],
-    #     [0, 1, 1, 0, 0, 0, 0, 0, 0],
-    #     [0, 0, 1, 1, 0, 0, 0, 0, 0],
-    #     [0, 1, 0, 0, 1, 0, 0, 0, 0],
-    #     [0, 0, 0, 1, 1, 0, 0, 0, 0]
-    # ]
-    # adjacency_matrix = [[1, 1, 0, 0, 0, 0, 0, 0, 0],
-    #                     [1, 1, 0, 1, 1, 1, 0, 0, 1],
-    #                     [0, 0, 1, 1, 0, 1, 0, 1, 1],
-    #                     [0, 1, 1, 1, 1, 1, 0, 0, 1],
-    #                     [0, 1, 0, 1, 1, 1, 1, 0, 1],
-    #                     [0, 1, 1, 1, 1, 1, 0, 0, 1],
-    #                     [0, 0, 0, 0, 1, 0, 1, 1, 1],
-    #                     [0, 0, 1, 0, 0, 0, 1, 1, 0],
-    #                     [0, 1, 1, 1, 1, 1, 1, 0, 1]]
 
     import time
 

@@ -3,6 +3,50 @@ from random import uniform
 from numpy.random import choice
 
 
+def grid_generator(num):
+    """
+    Генерирует матрицу смежности для графа в виде решетки
+    :param num: длина стороны решетки, должна быть нечетная
+    :return: adjacency_matrix
+    """
+    # Генерируем матрицу-модель решетки
+    matrix = [[j * num + i for i in range(1, num + 1)] for j in range(0, num)]
+    j = (num // 2)
+    null, matrix[j][j] = matrix[j][j], 0
+    for idx, i in enumerate(matrix):
+        for jdx, js in enumerate(matrix[idx]):
+            if matrix[idx][jdx] == null or matrix[idx][jdx] > null:
+                matrix[idx][jdx] = matrix[idx][jdx] - 1
+
+    adj_m = [[0 for i in range(num ** 2)] for j in range(num ** 2)]
+
+    # определяем соседей каждого элемента в матрице-модели, так же
+    # заполняем матрицу смежности в соответствии с моделью решетки и соседями
+    for i in range(num):
+        for j in range(num):
+            neighbors = []
+            if i - 1 < 0:
+                neighbors.append(matrix[i + 1][j])
+            elif i + 1 >= num:
+                neighbors.append(matrix[i - 1][j])
+            else:
+                neighbors.append(matrix[i + 1][j])
+                neighbors.append(matrix[i - 1][j])
+
+            if j - 1 < 0:
+                neighbors.append(matrix[i][j + 1])
+            elif j + 1 >= num:
+                neighbors.append(matrix[i][j - 1])
+            else:
+                neighbors.append(matrix[i][j - 1])
+                neighbors.append(matrix[i][j + 1])
+
+            for index in neighbors:
+                adj_m[matrix[i][j]][index] = 1
+                adj_m[index][matrix[i][j]] = 1
+    return adj_m
+
+
 def tree_generator(n):
     """Генерирует сенсорное дерево на основе количества сеноров"""
 
@@ -81,7 +125,7 @@ def graph_generator(n):
 
     # определяем координаты сенсоров и радиус их действия
     senosrs_coords = [(0.5, 0.5)] + [(uniform(0, 1), uniform(0, 1)) for _ in range(n)]
-    radius = 0.2
+    radius = 1/(n-1)
 
     for i in range(len(adjacency_matrix)):
 
