@@ -2,6 +2,7 @@ import graph_gen
 import main
 import plotly
 import plotly.graph_objs as go
+import validate
 
 # Фундовой - Сергеев
 n = 10
@@ -14,8 +15,10 @@ percent = 0
 for j, KolSens in enumerate(range(n, (n+1)*10, n)):
     for i in range(10):
         root = graph_gen.graph_generator(KolSens)
-        resault = main.rasp_create(root, balance=True)
-        Fundovoy[j] += len(resault)
+        result = main.rasp_create(root, balance=True)
+        if not validate.validateFunc(root, result):
+            FundovoyValid[j] = False
+        Fundovoy[j] += len(result)
         percent += 1/(10*len(x))
         print('{:.2%}, Fundovoy'.format(percent))
 
