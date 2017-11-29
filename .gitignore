@@ -1,7 +1,6 @@
-
-.idea/misc.xml
-.idea/modules.xml
-.idea/Sensors_tree.iml
-.idea/vcs.xml
-.idea/workspace.xml
+Rodeo/
+.idea/
+.html
+.png
+.zip
 __pycache__/validate.cpython-35.pyc
