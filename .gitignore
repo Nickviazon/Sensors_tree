@@ -1,6 +1,6 @@
-Rodeo/
+Rodeo3/
 .idea/
-.html
-.png
-.zip
-__pycache__/validate.cpython-35.pyc
+*.html
+*.png
+*.zip
+*.docx
