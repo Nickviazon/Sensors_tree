@@ -42,9 +42,9 @@ probabilities = list(map(float, probabilities))
 frame_num = 1000
 
 for prob in probabilities:
-    buffer_mean = main.sens_graph_with_prob(adjacency_matrix,
+    buffer_mean.append(main.sens_graph_with_prob(adjacency_matrix,
                                          schedule1,
-                                         prb=prob)
+                                         prb=prob))
     # buffer_mean.append(acc / frame_num)
     # buffer_mean.append(acc)
 

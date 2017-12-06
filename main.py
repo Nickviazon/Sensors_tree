@@ -88,8 +88,8 @@ def sens_graph_with_prob(adj, sch, prb=None, num_of_frames=1000):
         msg_count.append(sum(sensors_buffer))
         for slot in sch:
             # для всех сенсоров добавляем сообщение в буфер с вероятностью prob
-            for i in range(1, len(adj)):
-                if prb is not None:
+            if prb is not None and prb > 0:
+                for i in range(1, len(adj)):
                     assert type(prb) is float or prb == 1
                     if message_come(prb):
                         sensors_buffer[i] += 1
