@@ -1,3 +1,6 @@
+import decimal
+
+
 def indexes(itr, element, comparison='eq'):
     """
     Returns list of indexes all elements of an iterable object,
@@ -31,3 +34,9 @@ def indexes(itr, element, comparison='eq'):
         return [i for i, elem in enumerate(itr) if element <= elem]
     elif comparison == 'lss_eq':
         return [i for i, elem in enumerate(itr) if element >= elem]
+
+
+def frange(x, y, jump):
+  while x < y:
+    yield float(x)
+    x += decimal.Decimal(jump)

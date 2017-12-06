@@ -1,7 +1,8 @@
 import main
 import plotly
 import plotly.graph_objs as go
-import validate
+import numpy as np
+from help_functions import frange
 
 from graph_gen import graph_generator, tree_generator, grid_generator
 
@@ -35,18 +36,17 @@ while True:
 schedule1 = main.rasp_create(adjacency_matrix, balance=True)
 
 buffer_mean = []
-num_of_exp = 100
-probabilities = [i * (1/num_of_exp) for i in range(1, num_of_exp)]
+# num_of_exp =
+probabilities = list(np.arange(0, 1/(len(adjacency_matrix)-1)+0.001, 0.0005, dtype=float))
+probabilities = list(map(float, probabilities))
 frame_num = 1000
 
 for prob in probabilities:
-    acc = 0
-    for j in range(frame_num):
-        acc += main.sens_graph_with_prob(adjacency_matrix,
+    buffer_mean = main.sens_graph_with_prob(adjacency_matrix,
                                          schedule1,
                                          prb=prob)
-
-    buffer_mean.append(acc / frame_num)
+    # buffer_mean.append(acc / frame_num)
+    # buffer_mean.append(acc)
 
 data = []
 trace1 = go.Scatter(
@@ -57,9 +57,9 @@ trace1 = go.Scatter(
 data.append(trace1)
 
 
-layout = go.Layout(title=u"График зависимости количества сообщений в каждом сенсорном буфере от вероятности",
+layout = go.Layout(title=u"График зависимости количества сообщений в системе сенсорном буфере от вероятности",
                    xaxis=dict(title=u"Вероятность появления сообщения в сенсоре во время выполнения слота"),
-                   yaxis=dict(title=u"Среднее количество сообщений буфере")
+                   yaxis=dict(title=u"Среднее количество сообщений в системе")
                    )
 
 plot = dict(data=data, layout=layout)

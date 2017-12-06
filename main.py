@@ -73,33 +73,38 @@ def rasp_create(adj_matrix, balance=False):
     return result_way  # , len(result_way)                          # Вывод результата в формате [фрейм], число_слотов
 
 
-def sens_graph_with_prob(adj, sch, prb=None):
+def sens_graph_with_prob(adj, sch, prb=None, num_of_frames=1000):
     """
     Моделирует буфер сенсоров в сенорной сети
     :param adj: Матрица смежности сенсорной сети
     :param sch: Расписание работы сенсорной сети
     :param prb: Вероятность появления сообщения в кажом слоте для всех сенсоров
+    :param num_of_frames: Количество фреймов для моделирования сенсорной сети
     :return: среднее количество сообщений в буфере каждого сенсора
     """
     sensors_buffer = [1 if i != 0 else 0 for i in range(len(adj))]
-    for slot in sch:
-        # смотрим какие происходят передачи в слоте
-        # и изменяем количество сообщений в буфере
-        for transfer in slot:
-            sensors_buffer[transfer[0]] -= 1
-            if transfer[1] is not 0:
-                sensors_buffer[transfer[1]] += 1
+    msg_count = []
+    for frame in range(num_of_frames):
+        msg_count.append(sum(sensors_buffer))
+        for slot in sch:
+            # для всех сенсоров добавляем сообщение в буфер с вероятностью prob
+            for i in range(1, len(adj)):
+                if prb is not None:
+                    assert type(prb) is float or prb == 1
+                    if message_come(prb):
+                        sensors_buffer[i] += 1
 
-        # для всех сенсоров добавляем сообщение в буфер с вероятностью prob
-        for i in range(1, len(adj)):
-            if prb is not None:
-                assert type(prb) is float or prb == 1
-                if message_come(prb):
-                    sensors_buffer[i] += 1
+            # смотрим какие происходят передачи в слоте
+            # и изменяем количество сообщений в буфере
+            for transfer in slot:
+                if sensors_buffer[transfer[0]] > 0:
+                    sensors_buffer[transfer[0]] -= 1
+                    if transfer[1] is not 0:
+                        sensors_buffer[transfer[1]] += 1
 
-    # buff_mean = sum(sensors_buffer)/len(sensors_buffer[1:])
-    msg_count = sum(sensors_buffer)
-    return msg_count # buff_mean
+        # msg_count.append(sum(sensors_buffer))
+    msg_count = sum(msg_count)/num_of_frames
+    return msg_count
 
 
 def show_graph(graph):

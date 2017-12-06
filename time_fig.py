@@ -1,63 +1,56 @@
 import graph_gen
 import main  # Фундовой
-import Rodeo3.foreach as foreach # Яковлев
-import Rodeo3.Rasp as Rasp # Богданов
-import Rodeo3.PiluginAndHabibulin as PiluginAndHabibulin
 import plotly
 import plotly.graph_objs as go
-import timeit
 
+from graph_gen import graph_generator, tree_generator, grid_generator
 
-def wat_time(func):
-    a = timeit.default_timer()
-    func
-    return timeit.default_timer() - a
+while True:
+    try:
+        method = int(input('''Выберите метод генерации
+        1 - дерево;
+        2 - решетка;
+        3 - случайный граф
 
-n = 10
-faces = 5
+        '''))
+        if method in [1, 2, 3]:
+            if method == 1:
+                N = int(input('Введите число сенсоров в сети: '))
+                adjacency_matrix = tree_generator(N)
+            elif method == 3:
+                N = int(input('Введите число сенсоров в сети: '))
+                adjacency_matrix = graph_generator(N)
+            elif method == 2:
+                N = int(input('Введите длину стороны решетки: '))
+                if N % 2 == 0:
+                    raise ValueError
+                else:
+                    adjacency_matrix = grid_generator(N)
+            break
+        else:
+            raise ValueError
+    except ValueError:
+        print('Вы ввели некоректное число, попробуйте снова!')
 
-Rezault_Matr = [[0] * (n+1) for i in range(faces)]
+schedule1 = main.rasp_create(adjacency_matrix, balance=True)
 
-for i, sens_num in enumerate(range(n, (n+1)*10, n)):  # Количество сенсоров (деленное на 10)
-    for j in range(10):  # 10 раз генерируем дерево с одинковым количеством сенсоров
-
-        input_tree = graph_gen.graph_generator(sens_num)
-
-        Rezault_Matr[0][i] += wat_time(main.rasp_create(input_tree, True)) * 10 ** 6
-
-        Rezault_Matr[1][i] += wat_time(foreach.circle(input_tree)) * 10 ** 6
-
-        Rezault_Matr[2][i] += wat_time(Rasp.rasp(input_tree)) * 10 ** 6
-
-        Rezault_Matr[3][i] += wat_time(PiluginAndHabibulin.PiluginAndHabibulin(input_tree)) * 10 ** 6
-
-        Rezault_Matr[4][i] += wat_time(main.rasp_create(input_tree)) * 10 ** 6
-
-        print(i, j)
-
-for i in range(faces):
-    for j, elem in enumerate(range(n, (n+1)*10, n)):
-        Rezault_Matr[i][j] /= 10
-
-x = list(range(n, (n+1)*10, n))
-
-alg_names = ['Фундовой - Сергеев', 'Яковлев - Лотоцкий',
-             'Богданов - Иванова', 'Пилюгин - Хабибулин',
-             'Ф-С без балансировки']
+prob = 0.2
+buffer_mean = main.sens_graph_with_prob(adjacency_matrix,
+                                        schedule1,
+                                        prb=prob)
 
 data = []
-for i, result in enumerate(Rezault_Matr):
-    data.append(go.Scatter(
-        x=x,
-        y=result,
-        name=alg_names[i]
-        )
-    )
-layout = go.Layout(title=u"График зависимости времени выполнения алгоритма от количества сенсоров в сети",
-                   xaxis=dict(title=u"Количество сенсоров в сети"),
-                   yaxis=dict(title=u"Время")
+trace1 = go.Scatter(
+    x=[i for i in range(1, 1001)],
+    y=buffer_mean,
+ )
+data.append(trace1)
+
+layout = go.Layout(title=u"График зависимости количества сообщений в системе сенсорном буфере от вероятности",
+                   xaxis=dict(title=u"Номер фрейма"),
+                   yaxis=dict(title=u"сообщений в буфере первого сенсора")
                    )
 
 plot = dict(data=data, layout=layout)
 
-plotly.offline.plot(plot, filename='time.html')
+plotly.offline.plot(plot, filename='frame.html')
