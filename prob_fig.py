@@ -2,7 +2,6 @@ import main
 import plotly
 import plotly.graph_objs as go
 import numpy as np
-from help_functions import frange
 
 from graph_gen import graph_generator, tree_generator, grid_generator
 
@@ -35,29 +34,28 @@ while True:
 
 schedule1 = main.rasp_create(adjacency_matrix, balance=True)
 
-buffer_mean = []
-# num_of_exp =
-probabilities = list(np.arange(0, 1/(len(adjacency_matrix)-1)+0.001, 0.0005, dtype=float))
+
+step = 1/(len(adjacency_matrix)-1)/10
+probabilities = np.arange(0, 1/(len(adjacency_matrix)-1)+step, step, dtype=float)
 probabilities = list(map(float, probabilities))
-frame_num = 1000
-
-for prob in probabilities:
-    buffer_mean.append(main.sens_graph_with_prob(adjacency_matrix,
-                                         schedule1,
-                                         prb=prob))
-    # buffer_mean.append(acc / frame_num)
-    # buffer_mean.append(acc)
-
+buffer_mean = [main.sens_graph_with_prob(adjacency_matrix, schedule1, prb=prob) for prob in probabilities]
+teor_buff = []
 data = []
 trace1 = go.Scatter(
     x=probabilities,
     y=buffer_mean,
-    name='С балансировкой'
- )
+    )
+
 data.append(trace1)
 
+if teor_buff:
+    trace2 = go.Scatter(
+        x=probabilities,
+        y=teor_buff,
+        )
+    data.append(trace2)
 
-layout = go.Layout(title=u"График зависимости количества сообщений в системе сенсорном буфере от вероятности",
+layout = go.Layout(title=u"Количество сообщений в системе от вероятности появления сообщения в сенсоре",
                    xaxis=dict(title=u"Вероятность появления сообщения в сенсоре во время выполнения слота"),
                    yaxis=dict(title=u"Среднее количество сообщений в системе")
                    )
