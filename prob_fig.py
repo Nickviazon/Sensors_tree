@@ -32,15 +32,25 @@ while True:
     except ValueError:
         print('Вы ввели некоректное число, попробуйте снова!')
 
-schedule1 = main.rasp_create(adjacency_matrix, balance=True)
+schedule = main.rasp_create(adjacency_matrix, balance=True)
 
 
-step = 1/(len(adjacency_matrix)-1)/10
+step = 1/(len(adjacency_matrix)-1)/100
 probabilities = np.arange(0, 1/(len(adjacency_matrix)-1)+step, step, dtype=float)
 probabilities = list(map(float, probabilities))
-buffer_mean = [main.sens_graph_with_prob(adjacency_matrix, schedule1, prb=prob) for prob in probabilities]
+buffer_mean = [main.sens_graph_with_prob(adjacency_matrix, schedule, prb=prob) for prob in probabilities]
+
 teor_buff = []
+n = len(schedule)
+for prob in probabilities:
+
+    lmd = n*prob
+    if lmd == 1:
+        lmd = 0.99
+    teor_buff.append((lmd*(1-prob)+lmd*(1-lmd))/(2*(1-lmd)))
+
 data = []
+
 trace1 = go.Scatter(
     x=probabilities,
     y=buffer_mean,
