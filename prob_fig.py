@@ -11,9 +11,9 @@ while True:
         1 - дерево;
         2 - решетка;
         3 - случайный граф
-
+        4 - тестовый случай
         '''))
-        if method in [1, 2, 3]:
+        if method in [1, 2, 3, 4]:
             if method == 1:
                 N = int(input('Введите число сенсоров в сети: '))
                 adjacency_matrix = tree_generator(N)
@@ -26,6 +26,8 @@ while True:
                     raise ValueError
                 else:
                     adjacency_matrix = grid_generator(N)
+            elif method == 4:
+                adjacency_matrix = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
             break
         else:
             raise ValueError
@@ -36,18 +38,23 @@ schedule = main.rasp_create(adjacency_matrix, balance=True)
 
 
 step = 1/(len(adjacency_matrix)-1)/100
-probabilities = np.arange(0, 1/(len(adjacency_matrix)-1)+step, step, dtype=float)
+# probabilities = np.arange(0, 1/(len(adjacency_matrix)-1)+step, step, dtype=float)
+probabilities = np.arange(0, 1/(len(schedule))+step, step, dtype=float)
 probabilities = list(map(float, probabilities))
-buffer_mean = [main.sens_graph_with_prob(adjacency_matrix, schedule, prb=prob) for prob in probabilities]
+buffer_mean = [main.sens_graph_with_prob(adjacency_matrix, schedule, prb=prob, num_of_frames=1000)
+               for prob in probabilities]
 
 teor_buff = []
 n = len(schedule)
 for prob in probabilities:
 
     lmd = n*prob
+    q = 1-prob
     if lmd == 1:
         lmd = 0.99
-    teor_buff.append((lmd*(1-prob)+lmd*(1-lmd))/(2*(1-lmd)))
+
+    mean_requests = (lmd*q+lmd*(1-lmd))/(2*(1-lmd))
+    teor_buff.append(mean_requests*(len(adjacency_matrix)-1))
 
 data = []
 
