@@ -1,20 +1,20 @@
 import numpy as np
 import networkx as nx
-from random import random
 
 
-def message_come(prob):
-    return True if random() <= prob else False
+# def message_come(prob):
+#     return True if uni_random(0, 1) <= prob else False
 
 
 def rasp_create(adj_matrix, balance=False):
     """
     Функция для составления расписания передачи сообщений от передатчиков к Базовой Станции (БС) в случайно
     связанной сети.
-    :param adj_matrix: Матрица смежности. лист листов с описанием связей графового представления системы.
-    :param balance: Бинарная опция включения/отключения балансировки
-    :param prob: Вероятность появления сообщения в слоте на каждом сенсоре
-    :return: результат в формате расписания: [фрейм]
+
+    :adj_matrix: Матрица смежности. лист листов с описанием связей графового представления системы.
+    :balance: Бинарная опция включения/отключения балансировки
+    :prob: Вероятность появления сообщения в слоте на каждом сенсоре
+    :return: результат в формате расписания: фрейм->[слот->[передача->[передатчик, приемник]]]
     """
     result_way = []  # Список передач за фрейм
     sens_num = len(adj_matrix)  # Число передатчиков
@@ -76,23 +76,38 @@ def rasp_create(adj_matrix, balance=False):
 def sens_graph_with_prob(adj, sch, prb=None, num_of_frames=1000):
     """
     Моделирует буфер сенсоров в сенорной сети
-    :param adj: Матрица смежности сенсорной сети
-    :param sch: Расписание работы сенсорной сети
-    :param prb: Вероятность появления сообщения в кажом слоте для всех сенсоров
-    :param num_of_frames: Количество фреймов для моделирования сенсорной сети
+
+    :adj: Матрица смежности сенсорной сети
+    :sch: Расписание работы сенсорной сети
+    :prb: Вероятность появления сообщения в кажом слоте для всех сенсоров
+    :num_of_frames: Количество фреймов для моделирования сенсорной сети
     :return: среднее количество сообщений в буфере каждого сенсора
     """
     sensors_buffer = [1 if i != 0 else 0 for i in range(len(adj))]
+
     msg_count = []
+
+    assert type(prb) is float or 0 <= prb <= 1
+    # формируем матрицу прихода сообщений
+    is_msg_come = np.random.uniform(size=[len(sch)*num_of_frames, len(adj)-1])
+    is_msg_come = np.less_equal(is_msg_come, prb)
+
     for frame in range(num_of_frames):
+        # считаем количество сообщений в буфере на начало фрейма
         msg_count.append(sum(sensors_buffer))
-        for slot in sch:
-            # для всех сенсоров добавляем сообщение в буфер с вероятностью prob
-            if prb is not None and prb > 0:
-                for i in range(1, len(adj)):
-                    assert type(prb) is float or prb == 1
-                    if message_come(prb):
-                        sensors_buffer[i] += 1
+
+        for i, slot in enumerate(sch):
+
+            for j, is_coming in enumerate(is_msg_come[len(sch)*frame+i, :]):
+                # добавляем сообщение в буфер если оно пришло
+                if is_coming:
+                    sensors_buffer[j+1] += 1
+
+            # if prb is not None and prb > 0:
+            #     for i in range(1, len(adj)):
+            #         assert type(prb) is float or prb == 1
+            #         if message_come(prb):
+            #             sensors_buffer[i] += 1
 
             # смотрим какие происходят передачи в слоте
             # и изменяем количество сообщений в буфере
@@ -101,17 +116,16 @@ def sens_graph_with_prob(adj, sch, prb=None, num_of_frames=1000):
                     sensors_buffer[transfer[0]] -= 1
                     if transfer[1] is not 0:
                         sensors_buffer[transfer[1]] += 1
-
-        # msg_count.append(sum(sensors_buffer))
-    msg_count = sum(msg_count)/num_of_frames
-    return msg_count
+    mean_count = sum(msg_count)/num_of_frames
+    return mean_count
 
 
 def show_graph(graph):
     """
     Функция для отображения графа
-    :param graph: матрица смежности (лист листов) или объект графа из библиотеки networkX
-    :return:
+
+    :graph: матрица смежности (лист листов) или объект графа из библиотеки networkX
+    :return: None
     """
     import matplotlib.pyplot as plt
 
