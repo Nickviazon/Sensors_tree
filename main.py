@@ -43,8 +43,6 @@ def rasp_create(adj_matrix, balance=False):
         # Проходимся по сенсорам, проверяем возможность передачи и передаём
         for i in range(1, sens_num):
 
-
-
             # Проверка возможности передачи сообщения
             if len(trans_routes[i]) > 1:
                 source = trans_routes[i][-1]  # откуда передавать
@@ -73,7 +71,7 @@ def rasp_create(adj_matrix, balance=False):
     return result_way  # , len(result_way)                          # Вывод результата в формате [фрейм], число_слотов
 
 
-def sens_graph_with_prob(adj, sch, prb=None, num_of_frames=1000):
+def sens_graph_with_prob(adj, sch, prb=None, num_of_frames=1000, debug=False):
     """
     Моделирует буфер сенсоров в сенорной сети
 
@@ -84,24 +82,50 @@ def sens_graph_with_prob(adj, sch, prb=None, num_of_frames=1000):
     :return: среднее количество сообщений в буфере каждого сенсора
     """
     sensors_buffer = [1 if i != 0 else 0 for i in range(len(adj))]
-
-    msg_count = []
+    # buff_count = len(adj)-1
+    msg_count = 0
 
     assert type(prb) is float or 0 <= prb <= 1
+    frame = 1
+
+    # количество пришедших сообщений в слот
+    count_come = np.random.binomial(len(adj)-1, prb, size=[1, len(sch)*num_of_frames])
+    if debug is True: print((np.sum(count_come)/(len(sch)*num_of_frames), (len(adj)-1)*prb))
+    for i, comes in enumerate(count_come[0]):
+
+        slot_num = i % len(sch)
+        if i != 0 and slot_num is 0:
+            frame += 1
+            msg_count += sum(sensors_buffer)
+
+        if comes > 0:
+            sensors_recievers = np.random.choice(range(1, len(adj)-1), comes)
+            for sensor in sensors_recievers:
+                sensors_buffer[sensor] += 1
+
+        for transfer in sch[slot_num]:
+            if sensors_buffer[transfer[0]] != 0:
+                sensors_buffer[transfer[0]] -= 1
+                if transfer[1] != 0:
+                    sensors_buffer[transfer[1]] += 1
+
+    msg_count /= num_of_frames
+
     # формируем матрицу прихода сообщений
-    is_msg_come = np.random.uniform(size=[len(sch)*num_of_frames, len(adj)-1])
-    is_msg_come = np.less_equal(is_msg_come, prb)
+    # is_msg_come = np.random.uniform(size=[len(sch)*num_of_frames, len(adj)-1])
+    # is_msg_come = np.less_equal(is_msg_come, prb)
 
-    for frame in range(num_of_frames):
-        # считаем количество сообщений в буфере на начало фрейма
-        msg_count.append(sum(sensors_buffer))
+    # for frame in range(num_of_frames):
+    #     # считаем количество сообщений в буфере на начало фрейма
+    #     # msg_count.append(sum(sensors_buffer))
 
-        for i, slot in enumerate(sch):
+        # for i, slot in enumerate(sch):
 
-            for j, is_coming in enumerate(is_msg_come[len(sch)*frame+i, :]):
-                # добавляем сообщение в буфер если оно пришло
-                if is_coming:
-                    sensors_buffer[j+1] += 1
+            # for j, is_coming in enumerate(is_msg_come[len(sch)*frame+i, :]):
+            #     # добавляем сообщение в буфер если оно пришло
+            #     if is_coming:
+            #         buff_count += 1
+            #         sensors_buffer[j+1] += 1
 
             # if prb is not None and prb > 0:
             #     for i in range(1, len(adj)):
@@ -109,15 +133,9 @@ def sens_graph_with_prob(adj, sch, prb=None, num_of_frames=1000):
             #         if message_come(prb):
             #             sensors_buffer[i] += 1
 
-            # смотрим какие происходят передачи в слоте
-            # и изменяем количество сообщений в буфере
-            for transfer in slot:
-                if sensors_buffer[transfer[0]] > 0:
-                    sensors_buffer[transfer[0]] -= 1
-                    if transfer[1] is not 0:
-                        sensors_buffer[transfer[1]] += 1
-    mean_count = sum(msg_count)/num_of_frames
-    return mean_count
+    return msg_count
+
+
 
 
 def show_graph(graph):
