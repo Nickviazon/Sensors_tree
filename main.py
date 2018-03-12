@@ -14,9 +14,10 @@ def rasp_create(adj_matrix, balance=False):
     :adj_matrix: Матрица смежности. лист листов с описанием связей графового представления системы.
     :balance: Бинарная опция включения/отключения балансировки
     :prob: Вероятность появления сообщения в слоте на каждом сенсоре
-    :return: результат в формате расписания: фрейм->[слот->[передача->[передатчик, приемник]]]
+    :return: длину расписания, максимальное количество сообщений которые могут уйти из фрейма
     """
-    result_way = []  # Список передач за фрейм
+    # result_way = []  # Список передач за фрейм
+    frame_len, num_req_to_exit = 0, 0
     sens_num = len(adj_matrix)  # Число передатчиков
     bs_buf = 0  # Количество сообщений на БС
     graph = nx.from_numpy_matrix(np.matrix(adj_matrix))
@@ -35,7 +36,7 @@ def rasp_create(adj_matrix, balance=False):
         trans_routes = nx.shortest_path(graph, 0)
 
     while bs_buf < sens_num - 1:  # Пока все заявки не попадут на БС,...
-        cur_transmission = []  # Список передач за слот
+        # cur_transmission = []  # Список передач за слот
         trans_lock = [False] * sens_num  # Список заблокированных для передачи передатчиков
         receive_lock = [False] * sens_num  # Список заблокированных для приёма  передатчиков
 
@@ -54,7 +55,7 @@ def rasp_create(adj_matrix, balance=False):
                     trans_allowed = False
                 if trans_allowed:
                     # Добавление новой передачи в слот
-                    cur_transmission.append([source, receive])
+                    # cur_transmission.append([source, receive])
                     # Блокировка на передачу ближайших передатчиков
                     for j, neighbor in enumerate(adj_matrix[source]):
                         if neighbor == 1 or j == source:
@@ -67,11 +68,12 @@ def rasp_create(adj_matrix, balance=False):
                     trans_routes[i].pop()
                     if len(trans_routes[i]) == 1:
                         bs_buf += 1
-        result_way.append(cur_transmission)  # Добавления слота во фрейм
-    return result_way  # , len(result_way)                          # Вывод результата в формате [фрейм], число_слотов
+        frame_len += 1
+        # result_way.append(cur_transmission)  # Добавления слота во фрейм
+    return frame_len, bs_buf   #result_way
 
 
-def sens_graph_with_prob(adj, sch, prb=None, num_of_frames=1000, debug=False):
+def sens_graph_with_prob(adj, prb=None, num_of_frames=1000):
     """
     Моделирует буфер сенсоров в сенорной сети
 
@@ -81,61 +83,28 @@ def sens_graph_with_prob(adj, sch, prb=None, num_of_frames=1000, debug=False):
     :num_of_frames: Количество фреймов для моделирования сенсорной сети
     :return: среднее количество сообщений в буфере каждого сенсора
     """
-    sensors_buffer = [1 if i != 0 else 0 for i in range(len(adj))]
-    # buff_count = len(adj)-1
-    msg_count = 0
-
     assert type(prb) is float or 0 <= prb <= 1
-    frame = 1
+    # sensors_buffer = [1 if i != 0 else 0 for i in range(len(adj))]
+    buff_count = len(adj)-1
+    frame_len, req_num_to_exit = rasp_create(adj_matrix=adj, balance=True)
+    avg_buff = 0
 
     # количество пришедших сообщений в слот
-    count_come = np.random.binomial(len(adj)-1, prb, size=[1, len(sch)*num_of_frames])
-    if debug is True: print((np.sum(count_come)/(len(sch)*num_of_frames), (len(adj)-1)*prb))
-    for i, comes in enumerate(count_come[0]):
+    count_come = np.random.binomial(frame_len, prb, size=[num_of_frames, len(adj)-1])
+    for sens_come in count_come:
 
-        slot_num = i % len(sch)
-        if i != 0 and slot_num is 0:
-            frame += 1
-            msg_count += sum(sensors_buffer)
+        comes_sum = np.sum(sens_come)
 
-        if comes > 0:
-            sensors_recievers = np.random.choice(range(1, len(adj)-1), comes)
-            for sensor in sensors_recievers:
-                sensors_buffer[sensor] += 1
+        if buff_count + comes_sum - req_num_to_exit < 0:
+            buff_count = 0  # обнуляем буфер если сообщений уйдет >= количеству сообщений в буфере + количество пришедших
+        else:
+            buff_count += comes_sum - req_num_to_exit
 
-        for transfer in sch[slot_num]:
-            if sensors_buffer[transfer[0]] != 0:
-                sensors_buffer[transfer[0]] -= 1
-                if transfer[1] != 0:
-                    sensors_buffer[transfer[1]] += 1
+        avg_buff += buff_count
 
-    msg_count /= num_of_frames
+    avg_buff /= num_of_frames
 
-    # формируем матрицу прихода сообщений
-    # is_msg_come = np.random.uniform(size=[len(sch)*num_of_frames, len(adj)-1])
-    # is_msg_come = np.less_equal(is_msg_come, prb)
-
-    # for frame in range(num_of_frames):
-    #     # считаем количество сообщений в буфере на начало фрейма
-    #     # msg_count.append(sum(sensors_buffer))
-
-        # for i, slot in enumerate(sch):
-
-            # for j, is_coming in enumerate(is_msg_come[len(sch)*frame+i, :]):
-            #     # добавляем сообщение в буфер если оно пришло
-            #     if is_coming:
-            #         buff_count += 1
-            #         sensors_buffer[j+1] += 1
-
-            # if prb is not None and prb > 0:
-            #     for i in range(1, len(adj)):
-            #         assert type(prb) is float or prb == 1
-            #         if message_come(prb):
-            #             sensors_buffer[i] += 1
-
-    return msg_count
-
-
+    return avg_buff
 
 
 def show_graph(graph):
