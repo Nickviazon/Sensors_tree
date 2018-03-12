@@ -2,75 +2,66 @@ import main
 import plotly
 import plotly.graph_objs as go
 import numpy as np
+from interactive_console import interactive_console
 
-from graph_gen import graph_generator, tree_generator, grid_generator
+adjacency_matrix = interactive_console()
 
-while True:
-    try:
-        method = int(input('''Выберите метод генерации
-        1 - дерево;
-        2 - решетка;
-        3 - случайный граф
-        4 - тестовый случай
-        '''))
-        if method in [1, 2, 3, 4]:
-            if method == 1:
-                N = int(input('Введите число сенсоров в сети: '))
-                adjacency_matrix = tree_generator(N)
-            elif method == 3:
-                N = int(input('Введите число сенсоров в сети: '))
-                adjacency_matrix = graph_generator(N)
-            elif method == 2:
-                N = int(input('Введите длину стороны решетки: '))
-                if N % 2 == 0:
-                    raise ValueError
-                else:
-                    adjacency_matrix = grid_generator(N)
-            elif method == 4:
-                adjacency_matrix = [[0, 1, 1], [1, 0, 1], [1, 1, 0]]
-            break
-        else:
-            raise ValueError
-    except ValueError:
-        print('Вы ввели некоректное число, попробуйте снова!')
-
-schedule = main.rasp_create(adjacency_matrix, balance=True)
+len_frame, _ = main.rasp_create(adjacency_matrix, balance=True)
 
 
 step = 1/(len(adjacency_matrix)-1)/100
-# probabilities = np.arange(0, 1/(len(adjacency_matrix)-1)+step, step, dtype=float)
-probabilities = np.arange(0, 1/(len(schedule))+step, step, dtype=float)
+probabilities = np.arange(0, 1/len_frame, step, dtype=float)
 probabilities = list(map(float, probabilities))
-buffer_mean = [main.sens_graph_with_prob(adjacency_matrix, schedule, prb=prob, num_of_frames=1000)
-               for prob in probabilities]
 
-teor_buff = []
-n = len(schedule)
+
+teor_buff, buffer_mean, n_avg_exp = [], [], []
+buf = 0
 for prob in probabilities:
 
-    lmd = n*prob
+    buffer_mean.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=10000))
+
+    lmd = len_frame*prob
     q = 1-prob
-    if lmd == 1:
-        lmd = 0.99
 
     mean_requests = (lmd*q+lmd*(1-lmd))/(2*(1-lmd))
     teor_buff.append(mean_requests*(len(adjacency_matrix)-1))
+
+    avg_buf = 0
+    n_come = np.random.binomial(len_frame, prob, size=10000)
+    for cn in range(10000):
+        if buf == 0:
+            buf += n_come[cn]
+        else:
+            buf += n_come[cn]-1
+        avg_buf += buf
+    avg_buf /= 10000
+    n_avg_exp.append(avg_buf*(len(adjacency_matrix)-1))
 
 data = []
 
 trace1 = go.Scatter(
     x=probabilities,
     y=buffer_mean,
-    )
+    name='Практический результат'
 
+    )
 data.append(trace1)
 
 if teor_buff:
     trace2 = go.Scatter(
         x=probabilities,
         y=teor_buff,
+        name='Теоретический график'
         )
     data.append(trace2)
+
+if n_avg_exp:
+    trace3 = go.Scatter(
+        x=probabilities,
+        y=n_avg_exp,
+        name='"Работающий кодец" :D'
+        )
+    data.append(trace3)
 
 layout = go.Layout(title=u"Количество сообщений в системе от вероятности появления сообщения в сенсоре",
                    xaxis=dict(title=u"Вероятность появления сообщения в сенсоре во время выполнения слота"),
