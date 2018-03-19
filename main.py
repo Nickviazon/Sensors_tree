@@ -22,7 +22,7 @@ def routes_balance(graph):
 
     return routes
 
-def rasp_create(adj_matrix, sens_buf=[], balance=False, adaptation=False):
+def rasp_create(adj_matrix, sens_buf=[], balance=False):
     """
     Функция для составления расписания передачи сообщений от передатчиков к Базовой Станции (БС) в случайно
     связанной сети.
@@ -31,10 +31,11 @@ def rasp_create(adj_matrix, sens_buf=[], balance=False, adaptation=False):
     :balance: Бинарная опция включения/отключения балансировки
     :return: длину расписания, максимальное количество сообщений которые могут уйти из фрейма
     """
-    # result_way = []  # Список передач за фрейм
-    frame_len, num_req_to_exit = 0, 0
+
+    frame_len, num_req_to_exit = 0, [0] * len(adj_matrix)
     sens_num = len(adj_matrix)  # Число передатчиков
-    bs_buf = 0  # Количество сообщений на БС
+    if not sens_buf:
+        sens_buf = [0 if i == 0 else 1 for i in range(sens_num)]# Количество сообщений на БС
     graph = nx.from_numpy_matrix(np.matrix(adj_matrix))
 
     if balance:
@@ -42,45 +43,58 @@ def rasp_create(adj_matrix, sens_buf=[], balance=False, adaptation=False):
     else:
         trans_routes = nx.shortest_path(graph, 0)
 
-    while bs_buf < sens_num - 1:  # Пока все заявки не попадут на БС,...
-        # cur_transmission = []  # Список передач за слот
+    for i, sens_route in enumerate(trans_routes):
+        if sens_buf[i] > 1:
+            trans_routes[i] = [[sens_route[:], tuple([i])] for j in range(sens_buf[i])]
+        elif sens_buf[i] == 1:
+            trans_routes[i] = [[trans_routes[i], (i,)]]
+        else:
+            trans_routes[i] = []
+
+
+    while any(sens_buf[1:]):  # Пока все заявки не попадут на БС,...
+        # Список передач за слот
         trans_lock = [False] * sens_num  # Список заблокированных для передачи передатчиков
         receive_lock = [False] * sens_num  # Список заблокированных для приёма  передатчиков
 
         # В цикле исключена возможность передачи сообщения из БС (т.к. начинаем с 1)
         # Проходимся по сенсорам, проверяем возможность передачи и передаём
         for i in range(1, sens_num):
-
-            # Проверка возможности передачи сообщения
-            if len(trans_routes[i]) > 1:
-                source = trans_routes[i][-1]  # откуда передавать
-                receive = trans_routes[i][-2]  # куда передавать
-
+            for message_route in trans_routes[i]:
                 # Проверка возможности передачи сообщения
-                trans_allowed = True
-                if trans_lock[source] or receive_lock[receive]:
-                    trans_allowed = False
-                if trans_allowed:
-                    # Добавление новой передачи в слот
-                    # cur_transmission.append([source, receive])
-                    # Блокировка на передачу ближайших передатчиков
-                    for j, neighbor in enumerate(adj_matrix[source]):
-                        if neighbor == 1 or j == source:
-                            receive_lock[j] = True
-                    for j, neighbor in enumerate(adj_matrix[receive]):
-                        if neighbor == 1 or j == receive:
-                            trans_lock[j] = True
-                    trans_lock[receive] = True
-                    trans_lock[source] = True
-                    trans_routes[i].pop()
-                    if len(trans_routes[i]) == 1:
-                        bs_buf += 1
+                if len(message_route) > 1 and sens_buf[i] > 0:
+                    source = message_route[0][-1]  # откуда передавать
+                    receive = message_route[0][-2]  # куда передавать
+
+                    # Проверка возможности передачи сообщения
+                    trans_allowed = True
+                    if trans_lock[source] or receive_lock[receive]:
+                        trans_allowed = False
+                    if trans_allowed:
+                        # Добавление новой передачи в слот
+                        # cur_transmission.append([source, receive])
+                        # Блокировка на передачу ближайших передатчиков
+                        for j, neighbor in enumerate(adj_matrix[source]):
+                            if neighbor == 1 or j == source:
+                                receive_lock[j] = True
+                        for j, neighbor in enumerate(adj_matrix[receive]):
+                            if neighbor == 1 or j == receive:
+                                trans_lock[j] = True
+                        trans_lock[receive] = True
+                        trans_lock[source] = True
+                        sens_buf[receive] += 1
+                        sens_buf[source] -= 1
+                        message_route[0].pop()
+                        if len(message_route[0]) == 1:
+                            num_req_to_exit[message_route[1][0]] += 1
+                        route = trans_routes[source].pop(trans_routes[source].index(message_route))
+                        trans_routes[receive].append(route)
         frame_len += 1
         # result_way.append(cur_transmission)  # Добавления слота во фрейм
-    return frame_len, [1 if i > 0 else 0 for i, _ in enumerate(range(sens_num))]   #result_way
+    return frame_len, num_req_to_exit   #result_way
 
 
-def sens_graph_with_prob(adj, prb=None, num_of_frames=1000, optimased=False):
+def sens_graph_with_prob(adj, prb=None, num_of_frames=1000, adaptation=False):
     """
     Моделирует буфер сенсоров в сенорной сети
 
@@ -88,6 +102,7 @@ def sens_graph_with_prob(adj, prb=None, num_of_frames=1000, optimased=False):
     :sch: Расписание работы сенсорной сети
     :prb: Вероятность появления сообщения в кажом слоте для всех сенсоров
     :num_of_frames: Количество фреймов для моделирования сенсорной сети
+    :adaptation: Изменять ли расписание на каждом фрейме
     :return: среднее количество сообщений в буфере каждого сенсора
     """
     assert type(prb) is float or 0 <= prb <= 1
@@ -100,7 +115,8 @@ def sens_graph_with_prob(adj, prb=None, num_of_frames=1000, optimased=False):
     count_come = np.random.binomial(frame_len, prb, size=[num_of_frames, len(adj)-1])
     for frame_num, sens_come in enumerate(count_come):
 
-        if optimased and frame_num > 0:
+        if adaptation and frame_num > 0 and frame_num%10 == 0:
+            # print(frame_num, sensors_buffer)
             _, req_num_to_exit = rasp_create(adj_matrix=adj, sens_buf=sensors_buffer, balance=True)
 
         sensors_buffer = [0 if i == 0 or sensor + sens_come[i-1] - req_num_to_exit[i] <= 0

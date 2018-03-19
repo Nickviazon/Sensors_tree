@@ -20,7 +20,7 @@ num_of_frames = 1000
 for prob in probabilities:
 
     buffer_mean.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames))
-    # test_buf.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames, adaptation=True))
+    test_buf.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames, adaptation=True))
     print(prob)
 
 
