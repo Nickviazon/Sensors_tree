@@ -1,19 +1,34 @@
 import numpy as np
 import networkx as nx
 
+def routes_balance(graph):
+    """
+    Пытается найти наилучший путь для каждого сообщения в сенсорной сети изменяя веса ребер
+    :param graph: граф сенсорной сети построенный с помощью networkx
+    :return: список передач для каждого сенсора
+    """
+    sens_num = len(graph)
+    routes_p_node = np.zeros((sens_num,), dtype=np.int)
+    routes = [[] for _ in range(sens_num)]
 
-# def message_come(prob):
-#     return True if uni_random(0, 1) <= prob else False
+    for i in range(sens_num):
+        routes[i] = nx.shortest_path(graph, 0, i)
+        routes_p_node[routes[i]] += 1
+        routes_p_node[0] = 0
+        for j in routes[i]:
+            for e_num in graph[j]:
+                graph[j][e_num]['weight'] += routes_p_node[j] * sens_num ** -2
+                graph[e_num][j]['weight'] += routes_p_node[j] * sens_num ** -2
 
+    return routes
 
-def rasp_create(adj_matrix, balance=False):
+def rasp_create(adj_matrix, sens_buf=[], balance=False, adaptation=False):
     """
     Функция для составления расписания передачи сообщений от передатчиков к Базовой Станции (БС) в случайно
     связанной сети.
 
     :adj_matrix: Матрица смежности. лист листов с описанием связей графового представления системы.
     :balance: Бинарная опция включения/отключения балансировки
-    :prob: Вероятность появления сообщения в слоте на каждом сенсоре
     :return: длину расписания, максимальное количество сообщений которые могут уйти из фрейма
     """
     # result_way = []  # Список передач за фрейм
@@ -21,17 +36,9 @@ def rasp_create(adj_matrix, balance=False):
     sens_num = len(adj_matrix)  # Число передатчиков
     bs_buf = 0  # Количество сообщений на БС
     graph = nx.from_numpy_matrix(np.matrix(adj_matrix))
+
     if balance:
-        routes_p_node = np.zeros((sens_num,), dtype=np.int)
-        trans_routes = [[] for _ in range(sens_num)]
-        for i in range(sens_num):
-            trans_routes[i] = nx.shortest_path(graph, 0, i)
-            routes_p_node[trans_routes[i]] += 1
-            routes_p_node[0] = 0
-            for j in trans_routes[i]:
-                for e_num in graph[j]:
-                    graph[j][e_num]['weight'] += routes_p_node[j] * sens_num ** -2
-                    graph[e_num][j]['weight'] += routes_p_node[j] * sens_num ** -2
+        trans_routes = routes_balance(graph)
     else:
         trans_routes = nx.shortest_path(graph, 0)
 
@@ -70,10 +77,10 @@ def rasp_create(adj_matrix, balance=False):
                         bs_buf += 1
         frame_len += 1
         # result_way.append(cur_transmission)  # Добавления слота во фрейм
-    return frame_len, bs_buf   #result_way
+    return frame_len, [1 if i > 0 else 0 for i, _ in enumerate(range(sens_num))]   #result_way
 
 
-def sens_graph_with_prob(adj, prb=None, num_of_frames=1000):
+def sens_graph_with_prob(adj, prb=None, num_of_frames=1000, optimased=False):
     """
     Моделирует буфер сенсоров в сенорной сети
 
@@ -84,23 +91,22 @@ def sens_graph_with_prob(adj, prb=None, num_of_frames=1000):
     :return: среднее количество сообщений в буфере каждого сенсора
     """
     assert type(prb) is float or 0 <= prb <= 1
-    # sensors_buffer = [1 if i != 0 else 0 for i in range(len(adj))]
-    buff_count = len(adj)-1
+    sensors_buffer = [1 if i > 0 else 0 for i, _ in enumerate(range(len(adj)))]
+    # buff_count = len(adj)-1
     frame_len, req_num_to_exit = rasp_create(adj_matrix=adj, balance=True)
     avg_buff = 0
 
     # количество пришедших сообщений в слот
     count_come = np.random.binomial(frame_len, prb, size=[num_of_frames, len(adj)-1])
-    for sens_come in count_come:
+    for frame_num, sens_come in enumerate(count_come):
 
-        comes_sum = np.sum(sens_come)
+        if optimased and frame_num > 0:
+            _, req_num_to_exit = rasp_create(adj_matrix=adj, sens_buf=sensors_buffer, balance=True)
 
-        if buff_count + comes_sum - req_num_to_exit < 0:
-            buff_count = 0  # обнуляем буфер если сообщений уйдет >= количеству сообщений в буфере + количество пришедших
-        else:
-            buff_count += comes_sum - req_num_to_exit
-
-        avg_buff += buff_count
+        sensors_buffer = [0 if i == 0 or sensor + sens_come[i-1] - req_num_to_exit[i] <= 0
+                          else sensor + sens_come[i-1] - req_num_to_exit[i]
+                          for i, sensor in enumerate(sensors_buffer)]
+        avg_buff += sum(sensors_buffer)
 
     avg_buff /= num_of_frames
 
