@@ -9,7 +9,7 @@ adjacency_matrix = interactive_console()
 len_frame, _ = main.rasp_create(adjacency_matrix, balance=True)
 
 
-step = 1/(len(adjacency_matrix)-1)/10
+step = 1/(len(adjacency_matrix)-1)/100
 probabilities = np.arange(0, 1/len_frame, step, dtype=float)
 probabilities = list(map(float, probabilities))
 

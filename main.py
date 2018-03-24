@@ -72,25 +72,26 @@ def rasp_create(adj_matrix, sens_buf=[], balance=False):
                         trans_allowed = False
                     if trans_allowed:
                         # Добавление новой передачи в слот
-                        # cur_transmission.append([source, receive])
-                        # Блокировка на передачу ближайших передатчиков
-                        for j, neighbor in enumerate(adj_matrix[source]):
-                            if neighbor == 1 or j == source:
-                                receive_lock[j] = True
-                        for j, neighbor in enumerate(adj_matrix[receive]):
-                            if neighbor == 1 or j == receive:
-                                trans_lock[j] = True
+                        # Блокировка на передачу и прием ближайших передатчиков
+                        receive_lock = [True if neighbor == 1 or j == source
+                                        else False
+                                        for j, neighbor in enumerate(adj_matrix[source])]
+
+                        trans_lock = [True if neighbor == 1 or j == receive
+                                      else False
+                                      for j, neighbor in enumerate(adj_matrix[receive])]
+
                         trans_lock[receive] = True
                         trans_lock[source] = True
                         sens_buf[receive] += 1
                         sens_buf[source] -= 1
                         message_route[0].pop()
+
                         if len(message_route[0]) == 1:
                             num_req_to_exit[message_route[1][0]] += 1
                         route = trans_routes[source].pop(trans_routes[source].index(message_route))
                         trans_routes[receive].append(route)
         frame_len += 1
-        # result_way.append(cur_transmission)  # Добавления слота во фрейм
     return frame_len, num_req_to_exit   #result_way
 
 
