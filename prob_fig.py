@@ -6,7 +6,8 @@ from interactive_console import interactive_console
 
 adjacency_matrix = interactive_console()
 
-len_frame, _ = main.rasp_create(adjacency_matrix, balance=True)
+frame, _ = main.rasp_create(adjacency_matrix, balance=True)
+len_frame = len(frame)
 
 
 step = 1/(len(adjacency_matrix)-1)/100
@@ -19,9 +20,10 @@ buf = 0
 num_of_frames = 1000
 for prob in probabilities:
 
-    buffer_mean.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames))
+    # buffer_mean.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames))
     test_buf.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames, adaptation=True))
     print(prob)
+
 
 
     lmd = len_frame*prob
@@ -43,13 +45,14 @@ for prob in probabilities:
 
 data = []
 
-trace1 = go.Scatter(
-    x=probabilities,
-    y=buffer_mean,
-    name='Практический результат'
+if buffer_mean:
+    trace1 = go.Scatter(
+        x=probabilities,
+        y=buffer_mean,
+        name='Практический результат'
 
-    )
-data.append(trace1)
+        )
+    data.append(trace1)
 
 if teor_buff:
     trace2 = go.Scatter(
