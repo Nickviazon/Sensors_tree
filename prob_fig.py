@@ -10,17 +10,20 @@ frame, _ = main.rasp_create(adjacency_matrix, balance=True)
 len_frame = len(frame)
 
 
-step = 1/(len(adjacency_matrix)-1)/100
+step = 1/(len(adjacency_matrix)-1)/10
 probabilities = np.arange(0, 1/len_frame, step, dtype=float)
 probabilities = list(map(float, probabilities))
+#probabilities.append(0.123)
+#probabilities.append(0.5)
 
+#probabilities = [0.5]
 
 teor_buff, buffer_mean, n_avg_exp, test_buf = [], [], [], []
 buf = 0
 num_of_frames = 1000
 for prob in probabilities:
 
-    # buffer_mean.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames))
+    buffer_mean.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames))
     test_buf.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames, adaptation=True))
     print(prob)
 

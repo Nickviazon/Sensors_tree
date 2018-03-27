@@ -31,7 +31,7 @@ def rasp_create(adj_matrix, sens_buf=[], balance=False):
     :balance: Бинарная опция включения/отключения балансировки
     :return: длину расписания, максимальное количество сообщений которые могут уйти из фрейма
     """
-    # frame- Массив слотов, в каждом слоте указаны все сенсоры сообщения которых были переданы на БС
+    # frame- Массив слотов, в каждом слоте указаны все сенсоры, сообщения которых были переданы на БС
     # example:  [[1,2],[4], ...]
     frame = []
     frame_len, num_req_to_exit = 0, [0] * len(adj_matrix)
@@ -126,24 +126,25 @@ def sens_graph_with_prob(adj, prb=None, num_of_frames=1000, adaptation=False):
             break
 
         if adaptation and new_frame is True:
-            frame, req_num_to_exit = rasp_create(adj_matrix=adj, sens_buf=sensors_out[:], balance=True)
+            frame, _ = rasp_create(adj_matrix=adj, sens_buf=sensors_out[:], balance=True)
             new_frame = False
 
-        sensors_in = [0 if i == 0 or sensors_in[i]+slot_income[i-1] <= 0
-                     else sensors_in[i]+slot_income[i-1]
-                     for i in range(len(adj))]
+        sensors_in = [0 if i == 0 else sensors_in[i]+slot_income[i-1] for i in range(len(adj))]
+        
+#        print(frame)
         if frame:
-            sensors_out = [sens-1 if i in frame[slot_num] and sens-1 >= 0
-                           else sens
-                           for i, sens in enumerate(sensors_out)]
-
+#            print('slot num = {}; Len frame = {}'.format(slot_num,len(frame)))
+#            print('Before: {}'.format(sensors_out))
+            sensors_out = [sens-1 if i in frame[slot_num] and sens>0 else sens for i, sens in enumerate(sensors_out)]
+#            print('After: {}'.format(sensors_out))
+#            input()
 
         avg_buff += sum(sensors_in)+sum(sensors_out)
         slot_num += 1
         if slot_num >= len(frame):
             # в конце фрейма все приходящие сообщения становятся уходящими на следующем слоте,
             # а все приходящие обнуляются
-            sensors_out = sensors_in
+            sensors_out = [sensors_in[k] + sensors_out[k] for k in range(len(sensors_in)) ]
             sensors_in = [0 for i, _ in enumerate(range(len(adj)))]
             slot_num, new_frame = 0, True
             frame_num += 1
