@@ -6,35 +6,43 @@ from interactive_console import interactive_console
 
 adjacency_matrix = interactive_console()
 
-frame, _ = main.rasp_create(adjacency_matrix, balance=True)
+frame = main.rasp_create(adjacency_matrix, balance=True)
 len_frame = len(frame)
 
 
 step = 1/(len(adjacency_matrix)-1)/10
 probabilities = np.arange(0, 1/len_frame, step, dtype=float)
 probabilities = list(map(float, probabilities))
-#probabilities.append(0.123)
-#probabilities.append(0.5)
+probabilities.append(0.124)
+probabilities.append(0.126)
+# probabilities.append(0.128)
+# probabilities.append(0.13)
 
-#probabilities = [0.5]
+# probabilities.append(0.123)
+# probabilities.append(0.5)
 
-teor_buff, buffer_mean, n_avg_exp, test_buf = [], [], [], []
+# probabilities = [0.5]
+
+teor_buff, buffer_avg, n_avg_exp, buff_adapt = [], [], [], []
 buf = 0
 num_of_frames = 1000
 for prob in probabilities:
 
-    buffer_mean.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames))
-    test_buf.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames, adaptation=True))
+    # стандартный режим алгоритма
+    # buffer_avg.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames))
+
+    # адаптивный режим алгоритма
+    buff_adapt.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames, adaptation=True))
     print(prob)
 
-
-
+    # Теоретический расчет среднего количества сообщений в системе
     lmd = len_frame*prob
     q = 1-prob
 
     mean_requests = (lmd*q+lmd*(1-lmd))/(2*(1-lmd))
     teor_buff.append(mean_requests*(len(adjacency_matrix)-1))
 
+    # "Работающий кодец"
     avg_buf = 0
     n_come = np.random.binomial(len_frame, prob, size=num_of_frames)
     for cn in range(num_of_frames):
@@ -48,10 +56,10 @@ for prob in probabilities:
 
 data = []
 
-if buffer_mean:
+if buffer_avg:
     trace1 = go.Scatter(
         x=probabilities,
-        y=buffer_mean,
+        y=buffer_avg,
         name='Практический результат'
 
         )
@@ -73,10 +81,10 @@ if n_avg_exp:
         )
     data.append(trace3)
 
-if test_buf:
+if buff_adapt:
     trace4 = go.Scatter(
         x=probabilities,
-        y=test_buf,
+        y=buff_adapt,
         name='Адаптированный'
     )
     data.append(trace4)
