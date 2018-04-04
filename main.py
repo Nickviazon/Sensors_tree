@@ -106,7 +106,7 @@ def rasp_create(adj_matrix, sens_buf=list(), balance=False):
     return frame  # , num_req_to_exit   #result_way
 
 
-def sens_graph_with_prob(adj, prb=None, num_of_frames=1000, adaptation=False):
+def sens_graph_with_prob(adj, prb=None, num_of_frames=1000, adaptation=0):
     """
     Моделирует буфер сенсоров в сенорной сети
 
@@ -153,9 +153,10 @@ def sens_graph_with_prob(adj, prb=None, num_of_frames=1000, adaptation=False):
         if frame_num > num_of_frames:
             break
 
-        if adaptation and new_frame is True:
-            frame = rasp_create(adj_matrix=adj, sens_buf=sensors_out[:], balance=True)
-            new_frame = False
+        if adaptation > 0 and new_frame is True:
+            if frame_num % adaptation == 0:
+                frame = rasp_create(adj_matrix=adj, sens_buf=sensors_out[:], balance=True)
+                new_frame = False
 
     avg_buff /= total_slots
 

@@ -48,7 +48,7 @@ for i, prob in enumerate(probabilities):
     buffer_mean.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames))
 
     # адаптивный режим алгоритма
-    buff_adapt.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames, adaptation=True))
+    buff_adapt.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames, adaptation=2))
     print(prob)
 
     # Теоретический расчет среднего количества сообщений в системе
