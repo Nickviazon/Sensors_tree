@@ -1,3 +1,8 @@
+def key_init(dictionary, key, data):
+    if key not in dictionary:
+        dictionary[key] = data
+
+
 def indexes(itr, element, comparison='eq'):
     """
     Returns list of indexes all elements of an iterable object,
@@ -70,10 +75,3 @@ def draw_plot(title, x_title, y_title, file_name="plot.html", **plot_data):
 
     plot = dict(data=data, layout=layout)
     plotly.offline.plot(plot, filename=file_name)
-
-
-def frange(x, y, jump):
-  import decimal
-  while x < y:
-    yield float(x)
-    x += decimal.Decimal(jump)
