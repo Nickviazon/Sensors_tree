@@ -19,55 +19,66 @@ if __name__ == "__main__":
     sensors_count = len(adjacency_matrix) - 1
     frame = main.rasp_create(adjacency_matrix, balance=True)
     frame_len = len(frame)
-    
-    step = 1 / sensors_count / 10
-    probabilities = np.arange(0, 1 / frame_len, step, dtype=float)
+
+    num_of_points = 15
+    step = 1 / sensors_count / num_of_points
+    probabilities = np.arange(0, 1 / frame_len+step, step, dtype=float)
     probabilities = list(map(float, probabilities))
-    probabilities.append(0.124)
-    probabilities.append(0.126)
-    
+
+
     teor_buff, buffer_mean, buff_adapt, n_avg_exp = [], [], dict(), []
     mean_time, mean_time_adapt, mean_time_teor = [], dict(), []
 
     overflow_point = {"": []}
     adaptation_frames = [2**i for i in [0, 1, 2, 3]]
     checked = [False] * len(adaptation_frames)
+    adaptation_skip = []
 
     buf = 0
     num_of_frames = 1000
     for i, prob in enumerate(probabilities):
         
         # Теоретический расчет среднего количества сообщений в системе
-        teor_buff.append(avg_messages_calc(prob, frame_len, sensors_count))
+        if prob < 1 / sensors_count:
+            teor_buff.append(avg_messages_calc(prob, frame_len, sensors_count))
         
         # стандартный режим алгоритма
         buffer_mean.append(main.sens_graph_with_prob(adjacency_matrix, prb=prob, num_of_frames=num_of_frames))
         print(prob)
-        # адаптивный режим алгоритма
 
+        # адаптивный режим алгоритма
         for j, adapt_frame in enumerate(adaptation_frames):
             key_init(buff_adapt, adapt_frame, [])
             key_init(mean_time_adapt, adapt_frame, [])
+            if adapt_frame not in adaptation_skip:
+                mean_reqests_adapt = main.sens_graph_with_prob(adjacency_matrix,
+                                                               prb=prob,
+                                                               num_of_frames=num_of_frames,
+                                                               adaptation=adapt_frame)
 
-            buff_adapt[adapt_frame].append(main.sens_graph_with_prob(adjacency_matrix,
-                                                                     prb=prob,
-                                                                     num_of_frames=num_of_frames,
-                                                                     adaptation=adapt_frame))
-            try:
-                mean_time_adapt[adapt_frame].append((buff_adapt[adapt_frame][i] / (prob * sensors_count)))
-            except RuntimeWarning:
-                mean_time_adapt[adapt_frame].append(0)
-            except ZeroDivisionError:
-                mean_time_adapt[adapt_frame].append(0)
+                if mean_reqests_adapt > 200:
+                    adaptation_skip.append(adapt_frame)
+                else:
+                    buff_adapt[adapt_frame].append(mean_reqests_adapt)
 
-            print(adapt_frame/10)
+                try:
+                    mean_time_adapt[adapt_frame].append((buff_adapt[adapt_frame][i] / (prob * sensors_count)))
 
-            if buff_adapt[adapt_frame][i] > teor_buff[i] and i > 0 and not checked[j]:
-                overflow_point[""].append(prob)
-                checked[j] = True
+                    if prob < 1 / sensors_count and buff_adapt[adapt_frame][i] > teor_buff[i] and i > 0 and not checked[j]:
+                        overflow_point[""].append(prob)
+                        checked[j] = True
+
+                except RuntimeWarning:
+                    mean_time_adapt[adapt_frame].append(0)
+                except ZeroDivisionError:
+                    mean_time_adapt[adapt_frame].append(0)
+                except IndexError:
+                    pass
+
+                print(adapt_frame/10)
 
         try:
-            if teor_buff:
+            if teor_buff and prob < 1 / sensors_count:
                 mean_time_teor.append(teor_buff[i] / (prob * sensors_count))
             if buffer_mean:
                 mean_time.append(buffer_mean[i] / (prob * sensors_count))
@@ -75,8 +86,10 @@ if __name__ == "__main__":
         except RuntimeWarning:
             continue
         except ZeroDivisionError:
-            continue
-    
+            pass
+        except IndexError:
+            pass
+
     requests_for_plot = dict(x_axis=probabilities, y_type="log")
     times_for_plot = requests_for_plot.copy()
     
