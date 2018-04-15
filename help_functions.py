@@ -57,15 +57,18 @@ def draw_plot(title, x_title, y_title, file_name="plot.html", **plot_data):
     import plotly
     import plotly.graph_objs as go
 
-    if "x_axis" not in plot_data or not plot_data["x_axis"]:
-        raise KeyError("Dictionary haven't '{0}' key or '{0}' have unexpected value".format("x_axis"))
     if "x_type" not in plot_data or not plot_data["x_type"]:
         plot_data["x_type"] = "scatter"
     if "y_type" not in plot_data or not plot_data["y_type"]:
         plot_data["y_type"] = "scatter"
 
-    data = [go.Scatter(x=plot_data["x_axis"], y=plot_data[name], name=name)
-            for name in plot_data if name not in ["x_axis", "x_type", "y_type"]
+    for key, value in plot_data.items():
+        if key not in ["x_type", "y_type"]:
+            if "x_axis" not in value or not value["x_axis"]:
+                raise KeyError("Dictionary haven't '{0}' key or '{0}' have unexpected value".format("x_axis"))
+
+    data = [go.Scatter(x=plot_data[name]["x_axis"], y=plot_data[name]["value"], name=name)
+            for name in plot_data if name not in ["x_type", "y_type"]
             ]
 
     layout = go.Layout(title=u"{}".format(title),
