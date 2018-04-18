@@ -38,7 +38,7 @@ def indexes(itr, element, comparison='eq'):
         return [i for i, elem in enumerate(itr) if element >= elem]
 
 
-def draw_plot(title, x_title, y_title, file_name="plot.html", **plot_data):
+def draw_plot(title, x_title, y_title, file_name="plot.html", save_image=False, **plot_data):
     """
     Simple wrapper function for drawing graphs in Plotly
 
@@ -66,15 +66,78 @@ def draw_plot(title, x_title, y_title, file_name="plot.html", **plot_data):
         if key not in ["x_type", "y_type"]:
             if "x_axis" not in value or not value["x_axis"]:
                 raise KeyError("Dictionary haven't '{0}' key or '{0}' have unexpected value".format("x_axis"))
+    data = []
+    for name in sorted(list(plot_data), reverse=True):
+        if name not in ["x_type", "y_type", "Не адаптивный"]:
+            data.append(go.Scatter(x=plot_data[name]["x_axis"],
+                                   y=plot_data[name]["value"],
+                                   name=name,
+                                   line={"width": 7},
+                                   marker={"size": 17}))
 
-    data = [go.Scatter(x=plot_data[name]["x_axis"], y=plot_data[name]["value"], name=name)
-            for name in plot_data if name not in ["x_type", "y_type"]
-            ]
+        elif name == "Не адаптивный":
+            data.append(go.Scatter(
+                x=plot_data["Не адаптивный"]["x_axis"],
+                y=plot_data["Не адаптивный"]["value"],
+                name="Не адаптивный",
+                line={
+                    "width": 7,
+                    "dash": "longdash",
+                },
+                marker={
+                    "size": 18,
+                    "symbol": "cross"
+                },
+            ))
+
 
     layout = go.Layout(title=u"{}".format(title),
-                       xaxis=dict(title=u"{}".format(x_title), type="{}".format(plot_data["x_type"])),
-                       yaxis=dict(title=u"{}".format(y_title), type="{}".format(plot_data["y_type"])),
+                       titlefont=dict(
+                           family='Calibri, monospace',
+                           size=44
+                       ),
+
+                       font=dict(
+                           family='Calibri, monospace',
+                           size=38
+                       ),
+
+                       xaxis=dict(
+                           title=u"{}".format(x_title),
+                           titlefont=dict(
+                               family='Calibri, monospace',
+                               size=38
+                               ),
+                           type="{}".format(plot_data["x_type"]),
+                           domain=[0.08, 1]
+                           ),
+
+                       yaxis=dict(
+                           title=u"{}".format(y_title),
+                           titlefont=dict(
+                                family='Calibri, monospace',
+                                size=38
+                                ),
+                           type="{}".format(plot_data["y_type"]),
+                           domain=[0.01, 1]
+                           ),
+
+                       legend=dict(
+                           borderwidth=1,
+                           x=0.1495,
+                           y=1,
+                           xanchor='left',
+
+                           font=dict(
+                               family='Calibri, monospace',
+                               size=24
+                               ),
+                           ),
+
                        )
 
     plot = dict(data=data, layout=layout)
-    plotly.offline.plot(plot, filename=file_name)
+    if save_image:
+        plotly.offline.plot(plot, filename=file_name, image="png", image_height=1020, image_width=1980)
+    else:
+        plotly.offline.plot(plot, filename=file_name)

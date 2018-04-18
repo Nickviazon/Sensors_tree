@@ -24,6 +24,8 @@ if __name__ == "__main__":
     step = 1 / sensors_count / num_of_points
     probabilities = np.arange(0, 1 / frame_len+step, step, dtype=float)
     probabilities = list(map(float, probabilities))
+    probabilities.insert(1, step/2)
+    probabilities.insert(1, step/2/2)
     prob_for_teor = list(map(float, np.arange(0, 1 / frame_len, 1 / sensors_count / 1000, dtype=float)))
 
     teor_buff, buffer_mean, buff_adapt, n_avg_exp = [], [], dict(), []
@@ -103,9 +105,9 @@ if __name__ == "__main__":
     times_for_plot = dict(y_type="log")
 
     if buffer_mean:
-        requests_for_plot['Практический результат'] = dict()
-        requests_for_plot['Практический результат']['value'] = buffer_mean
-        requests_for_plot['Практический результат']['x_axis'] = probabilities
+        requests_for_plot['Не адаптивный'] = dict()
+        requests_for_plot['Не адаптивный']['value'] = buffer_mean
+        requests_for_plot['Не адаптивный']['x_axis'] = probabilities
 
     if teor_buff:
         requests_for_plot['Теоретический график'] = dict()
@@ -142,23 +144,28 @@ if __name__ == "__main__":
 
     if overflow_point:
         # key_init(overflow_point, key="x_axis", data=adaptation_frames)
-        overflow_point[""]["value"] = list(reversed(overflow_point[""]["value"]))
-        overflow_point[""]["x_axis"] = adaptation_frames
+        overflow_point[""]["value"] = [1/sensors_count, 0.0938, 0.03898, 0.0108]
 
-    draw_plot(title="Количество сообщений в системе",
-              x_title="Вероятность появления сообщения в сенсоре",
-              y_title="Среднее количество сообщений в системе",
+        # overflow_point[""]["value"] = list(reversed(overflow_point[""]["value"]))
+        # overflow_point[""]["x_axis"] = adaptation_frames
+
+    draw_plot(title="Среднее количество сообщений в системе",
+              x_title="Вероятность появления сообщения в сенсоре, p",
+              y_title="Количество сообщений в системе, Q",
               file_name="prob_fig.html",
+              save_image=True,
               **requests_for_plot)
 
     draw_plot(title="Среднее время пребывания сообщения в системе",
               x_title="Вероятность появления сообщения в сенсоре",
               y_title="Время",
               file_name="time_fig.html",
+              save_image=True,
               **times_for_plot)
 
     draw_plot(title="Значение точки переполнения от порядка адаптации",
               x_title="Номер фрейма",
-              y_title="Вероятность появления сообщения в сенсоре",
+              y_title="Вероятность возникновения сообщения, p",
               file_name="overflow.html",
+              save_image=True,
               **overflow_point)
