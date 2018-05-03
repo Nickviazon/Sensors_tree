@@ -67,19 +67,23 @@ def draw_plot(title, x_title, y_title, file_name="plot.html", save_image=False, 
             if "x_axis" not in value or not value["x_axis"]:
                 raise KeyError("Dictionary haven't '{0}' key or '{0}' have unexpected value".format("x_axis"))
     data = []
+    markers = ["circle-open", "square", "triangle", "x"]
+    i = 0
     for name in sorted(list(plot_data), reverse=True):
-        if name not in ["x_type", "y_type", "Не адаптивный"]:
+        if name not in ["x_type", "y_type", "Неадаптивный", "Неадаптивный(теор.)"]:
             data.append(go.Scatter(x=plot_data[name]["x_axis"],
                                    y=plot_data[name]["value"],
                                    name=name,
                                    line={"width": 7},
-                                   marker={"size": 17}))
+                                   marker={"size": 17,
+                                           "symbol": markers[i]}))
+            i += 1
 
-        elif name == "Не адаптивный":
+        elif name == "Неадаптивный":
             data.append(go.Scatter(
-                x=plot_data["Не адаптивный"]["x_axis"],
-                y=plot_data["Не адаптивный"]["value"],
-                name="Не адаптивный",
+                x=plot_data["Неадаптивный"]["x_axis"],
+                y=plot_data["Неадаптивный"]["value"],
+                name="Неадаптивный",
                 line={
                     "width": 7,
                     "dash": "longdash",
@@ -89,7 +93,13 @@ def draw_plot(title, x_title, y_title, file_name="plot.html", save_image=False, 
                     "symbol": "cross"
                 },
             ))
-
+        elif name == "Неадаптивный(теор.)":
+            data.append(go.Scatter(
+                x=plot_data["Неадаптивный(теор.)"]["x_axis"],
+                y=plot_data["Неадаптивный(теор.)"]["value"],
+                name="Неадаптивный(теор.)",
+                line={"width": 7},
+            ))
 
     layout = go.Layout(title=u"{}".format(title),
                        titlefont=dict(

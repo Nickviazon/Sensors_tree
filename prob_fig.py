@@ -105,14 +105,14 @@ if __name__ == "__main__":
     times_for_plot = dict(y_type="log")
 
     if buffer_mean:
-        requests_for_plot['Не адаптивный'] = dict()
-        requests_for_plot['Не адаптивный']['value'] = buffer_mean
-        requests_for_plot['Не адаптивный']['x_axis'] = probabilities
+        requests_for_plot['Неадаптивный'] = dict()
+        requests_for_plot['Неадаптивный']['value'] = buffer_mean
+        requests_for_plot['Неадаптивный']['x_axis'] = probabilities
 
     if teor_buff:
-        requests_for_plot['Теоретический график'] = dict()
-        requests_for_plot['Теоретический график']['value'] = teor_buff
-        requests_for_plot['Теоретический график']['x_axis'] = prob_for_teor
+        requests_for_plot['Неадаптивный(теор.)'] = dict()
+        requests_for_plot['Неадаптивный(теор.)']['value'] = teor_buff
+        requests_for_plot['Неадаптивный(теор.)']['x_axis'] = prob_for_teor
 
     if n_avg_exp:
 
@@ -147,7 +147,7 @@ if __name__ == "__main__":
         overflow_point[""]["value"] = [1/sensors_count, 0.0938, 0.03898, 0.0108]
 
         # overflow_point[""]["value"] = list(reversed(overflow_point[""]["value"]))
-        # overflow_point[""]["x_axis"] = adaptation_frames
+        overflow_point[""]["x_axis"] = adaptation_frames
 
     draw_plot(title="Среднее количество сообщений в системе",
               x_title="Вероятность появления сообщения в сенсоре, p",
@@ -156,12 +156,12 @@ if __name__ == "__main__":
               save_image=True,
               **requests_for_plot)
 
-    draw_plot(title="Среднее время пребывания сообщения в системе",
-              x_title="Вероятность появления сообщения в сенсоре",
-              y_title="Время",
-              file_name="time_fig.html",
-              save_image=True,
-              **times_for_plot)
+    # draw_plot(title="Среднее время пребывания сообщения в системе",
+    #           x_title="Вероятность появления сообщения в сенсоре",
+    #           y_title="Время",
+    #           file_name="time_fig.html",
+    #           save_image=True,
+    #           **times_for_plot)
 
     draw_plot(title="Значение точки переполнения от порядка адаптации",
               x_title="Номер фрейма",
