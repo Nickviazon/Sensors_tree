@@ -1,25 +1,47 @@
 import numpy as np
 import networkx as nx
 
+def sens_sort(graph):
+    return sorted(graph, key=lambda x: nx.shortest_path_length(graph, x, 0,))
 
-def routes_balance(graph):
+
+def route_structure(routes_list):
+    for i, sens_route in enumerate(routes_list):
+        if len(sens_route):
+            for j, msg in enumerate(sens_route):
+                routes_list[i][j] = [msg, (i,)]
+
+
+def routes_create(graph, sens_buf=list(), balance = False):
     """
-    Пытается найти наилучший путь для каждого сообщения в сенсорной сети изменяя веса ребер
+    Создает структуру данных для путей вида: [сенсор_i:[сообщение_j:[путь до бс:[], источник сообщения:(i,)]]]
+    если параметр balance = True, то
+    пытается найти наилучший путь для каждого сообщения в сенсорной сети изменяя веса ребер
     :param graph: граф сенсорной сети построенный с помощью networkx
     :return: список передач для каждого сенсора
     """
     sens_num = len(graph)
-    routes_p_node = np.zeros((sens_num,), dtype=np.int)
-    routes = [[] for _ in range(sens_num)]
+    if not sens_buf:
+        sens_buf = [0 if i == 0 else 1 for i in range(sens_num)]
 
-    for i in range(sens_num):
-        routes[i] = nx.shortest_path(graph, 0, i)
-        routes_p_node[routes[i]] += 1
-        routes_p_node[0] = 0
-        for j in routes[i]:
-            for e_num in graph[j]:
-                graph[j][e_num]['weight'] += routes_p_node[j] * sens_num ** -2
-                graph[e_num][j]['weight'] += routes_p_node[j] * sens_num ** -2
+    if balance:
+        routes_p_node = np.zeros((sens_num,), dtype=np.int)
+        routes = [[] for _ in range(sens_num)]
+        for i in sens_sort(graph):
+            if i is not 0 or sens_buf[i]:
+                for msg in range(sens_buf[i]):
+                    routes[i].append(nx.shortest_path(graph, 0, i))
+
+                    routes_p_node[routes[i][msg]] += 1
+                    routes_p_node[0] = 0
+                    for j in routes[i][msg]:
+                        for e_num in graph[j]:
+                            graph[j][e_num]['weight'] += routes_p_node[j] * sens_num ** -2
+                            graph[e_num][j]['weight'] += routes_p_node[j] * sens_num ** -2
+    else:
+        routes = [[nx.shortest_path(graph, 0, i)] for i in graph]
+
+    route_structure(routes)
 
     return routes
 
@@ -44,18 +66,7 @@ def rasp_create(adj_matrix, sens_buf=list(), balance=False):
         sens_buf = [0 if i == 0 else 1 for i in range(sens_num)]  # Количество сообщений на БС
     graph = nx.from_numpy_matrix(np.matrix(adj_matrix))
 
-    if balance:
-        trans_routes = routes_balance(graph)
-    else:
-        trans_routes = nx.shortest_path(graph, 0)
-
-    for i, sens_route in enumerate(trans_routes):
-        if sens_buf[i] > 1:
-            trans_routes[i] = [[sens_route[:], (i,)] for _ in range(sens_buf[i])]
-        elif sens_buf[i] == 1:
-            trans_routes[i] = [[trans_routes[i], (i,)]]
-        else:
-            trans_routes[i] = []
+    trans_routes = routes_create(graph, sens_buf, balance)
 
     while any(sens_buf[1:]):  # Пока все заявки не попадут на БС,...
         # Список передач за слот
@@ -64,7 +75,7 @@ def rasp_create(adj_matrix, sens_buf=list(), balance=False):
         frame.append([])
         # В цикле исключена возможность передачи сообщения из БС (т.к. начинаем с 1)
         # Проходимся по сенсорам, проверяем возможность передачи и передаём
-        for i in range(1, sens_num):
+        for i in sens_sort(graph)[1:]:
             # берем сообщение из i-го сенсора, если есть
             if trans_routes[i]:
                 message_route = trans_routes[i][0]
@@ -134,11 +145,7 @@ def sens_graph_with_prob(adj, prb=None, num_of_frames=1000, adaptation=0):
         
         # print(frame)
         if frame:
-            # print('slot num = {}; Len frame = {}'.format(slot_num,len(frame)))
-            # print('Before: {}'.format(sensors_out))
             sensors_out = [sens-1 if i in frame[slot_num] and sens > 0 else sens for i, sens in enumerate(sensors_out)]
-            # print('After: {}'.format(sensors_out))
-            # input()
 
         avg_buff += sum(sensors_in)+sum(sensors_out)
         slot_num += 1
@@ -181,4 +188,5 @@ def show_graph(graph):
 if __name__ == "__main__":
     from interactive_console import interactive_console
     adjacency_matrix = interactive_console()
-    print(sens_graph_with_prob(adjacency_matrix, prb=0.126, num_of_frames=1000, adaptation=True))
+    rasp_create(adjacency_matrix, sens_buf=[0, 2, 3, 0, 0, 0, 0, 0, 0], balance=True)
+#     print(sens_graph_with_prob(adjacency_matrix, prb=0.126, num_of_frames=1000, adaptation=True))
