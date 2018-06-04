@@ -31,7 +31,7 @@ def routes_create(graph, sens_buf=list(), balance = False):
         for i in sens_sort(graph):
             if i is not 0 or sens_buf[i]:
                 for msg in range(sens_buf[i]):
-                    routes[i].append(nx.dijkstra_path_length(graph, 0, i))
+                    routes[i].append(nx.dijkstra_path(graph, 0, i))
 
                     routes_p_node[routes[i][msg]] += 1
                     routes_p_node[0] = 0
@@ -40,7 +40,7 @@ def routes_create(graph, sens_buf=list(), balance = False):
                             graph[j][e_num]['weight'] += routes_p_node[j] * sens_num ** -2
                             graph[e_num][j]['weight'] += routes_p_node[j] * sens_num ** -2
     else:
-        routes = [[nx.dijkstra_path_length(graph, 0, i)] for i in graph]
+        routes = [[nx.dijkstra_path(graph, 0, i)] for i in graph]
 
     route_structure(routes)
 

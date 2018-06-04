@@ -129,7 +129,9 @@ def draw_plot(title, x_title, y_title, file_name="plot.html", save_image=False, 
                                 size=38
                                 ),
                            type="{}".format(plot_data["y_type"]),
-                           domain=[0.01, 1]
+                           domain=[0.01, 1],
+                           gridcolor='#bdbdbd',
+                           gridwidth=2,
                            ),
 
                        legend=dict(
